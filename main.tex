@@ -5,6 +5,7 @@
 \usepackage{subfiles}   % 末尾使用 \subfile 时需要
 \usepackage{amsmath}    % For \text{} in math mode
 \usepackage{placeins}
+\usepackage{minted}     % For code highlighting
 
 \DeclareSIUnit{\MSPS}{MSPS}
 
@@ -15,36 +16,39 @@
 
 
 \subfile{sections/title}
-\newpage
+\clearpage
 
 \tableofcontents
 \clearpage
 
 \pagenumbering{arabic}
 \subfile{sections/1_abstract}
-\newpage
+\clearpage
 
 \subfile{sections/2_system}
-\newpage
+\clearpage
 
 \subfile{sections/3_method}
-\newpage
+\clearpage
 
 \subfile{sections/4_experimental}
-\newpage
+\clearpage
 
 \subfile{sections/5_ecological_mapping}
-\newpage
+\clearpage
 
 \subfile{sections/6_conclusion}
-\newpage
+\clearpage
 
 \subfile{sections/references}
-\newpage
+\clearpage
 
 \subfile{sections/acknowledgments}
-\newpage
+\clearpage
 
-\subfile{sections/appendix.tex}
+\appendix
+\subfile{sections/appendix_a.tex}
+\clearpage
+\subfile{sections/appendix_b.tex}
 
 \end{document}

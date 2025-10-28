@@ -1,0 +1,562 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+cm}{/* USER CODE BEGIN Header */}
+\PYG{c+cm}{/**}
+\PYG{c+cm}{  ******************************************************************************}
+\PYG{c+cm}{  * @file           : main.c}
+\PYG{c+cm}{  * @brief          : Main program body}
+\PYG{c+cm}{  ******************************************************************************}
+\PYG{c+cm}{  * @attention}
+\PYG{c+cm}{  *}
+\PYG{c+cm}{  * Copyright (c) 2025 STMicroelectronics.}
+\PYG{c+cm}{  * All rights reserved.}
+\PYG{c+cm}{  *}
+\PYG{c+cm}{  * This software is licensed under terms that can be found in the LICENSE file}
+\PYG{c+cm}{  * in the root directory of this software component.}
+\PYG{c+cm}{  * If no LICENSE file comes with this software, it is provided AS\PYGZhy{}IS.}
+\PYG{c+cm}{  *}
+\PYG{c+cm}{  ******************************************************************************}
+\PYG{c+cm}{  */}
+\PYG{c+cm}{/* USER CODE END Header */}
+\PYG{c+cm}{/* Includes \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}*/}
+\PYG{c+cp}{\PYGZsh{}include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZdq{}main.h\PYGZdq{}}
+
+\PYG{c+cm}{/* Private includes \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}*/}
+\PYG{c+cm}{/* USER CODE BEGIN Includes */}
+\PYG{c+cp}{\PYGZsh{}include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}stdio.h\PYGZgt{}}
+\PYG{c+cp}{\PYGZsh{}include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}string.h\PYGZgt{}}
+\PYG{c+cp}{\PYGZsh{}include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}stdbool.h\PYGZgt{}}
+\PYG{c+cm}{/* USER CODE END Includes */}
+
+\PYG{c+cm}{/* Private typedef \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}*/}
+\PYG{c+cm}{/* USER CODE BEGIN PTD */}
+
+\PYG{c+cm}{/* USER CODE END PTD */}
+
+\PYG{c+cm}{/* Private define \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}*/}
+\PYG{c+cm}{/* USER CODE BEGIN PD */}
+
+\PYG{c+cm}{/* USER CODE END PD */}
+
+\PYG{c+cm}{/* Private macro \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}*/}
+\PYG{c+cm}{/* USER CODE BEGIN PM */}
+
+\PYG{c+cm}{/* USER CODE END PM */}
+
+\PYG{c+cm}{/* Private variables \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}*/}
+\PYG{n}{ADC\PYGZus{}HandleTypeDef}\PYG{+w}{ }\PYG{n}{hadc1}\PYG{p}{;}
+\PYG{n}{DMA\PYGZus{}HandleTypeDef}\PYG{+w}{ }\PYG{n}{hdma\PYGZus{}adc1}\PYG{p}{;}
+
+\PYG{n}{TIM\PYGZus{}HandleTypeDef}\PYG{+w}{ }\PYG{n}{htim1}\PYG{p}{;}
+\PYG{n}{TIM\PYGZus{}HandleTypeDef}\PYG{+w}{ }\PYG{n}{htim3}\PYG{p}{;}
+
+\PYG{n}{UART\PYGZus{}HandleTypeDef}\PYG{+w}{ }\PYG{n}{huart2}\PYG{p}{;}
+
+\PYG{c+cm}{/* USER CODE BEGIN PV */}
+\PYG{c+c1}{// スペクトロメータのピクセル数を定義}
+\PYG{c+cp}{\PYGZsh{}define NUM\PYGZus{}PIXELS 288}
+\PYG{c+c1}{// DMA受信バッファ}
+\PYG{k+kt}{uint16\PYGZus{}t}\PYG{+w}{ }\PYG{n}{adc\PYGZus{}buffer}\PYG{p}{[}\PYG{n}{NUM\PYGZus{}PIXELS}\PYG{p}{];}
+\PYG{c+c1}{// データ収集完了フラグ}
+\PYG{k}{volatile}\PYG{+w}{ }\PYG{k+kt}{bool}\PYG{+w}{ }\PYG{n}{data\PYGZus{}ready\PYGZus{}flag}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{;}
+\PYG{c+cm}{/* USER CODE END PV */}
+
+\PYG{c+cm}{/* Private function prototypes \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}*/}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{SystemClock\PYGZus{}Config}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{);}
+\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{MX\PYGZus{}GPIO\PYGZus{}Init}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{);}
+\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{MX\PYGZus{}DMA\PYGZus{}Init}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{);}
+\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{MX\PYGZus{}USART2\PYGZus{}UART\PYGZus{}Init}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{);}
+\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{MX\PYGZus{}ADC1\PYGZus{}Init}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{);}
+\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{MX\PYGZus{}TIM1\PYGZus{}Init}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{);}
+\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{MX\PYGZus{}TIM3\PYGZus{}Init}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{);}
+\PYG{c+cm}{/* USER CODE BEGIN PFP */}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{print\PYGZus{}spectrum\PYGZus{}data}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{);}
+\PYG{c+cm}{/* USER CODE END PFP */}
+
+\PYG{c+cm}{/* Private user code \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}*/}
+\PYG{c+cm}{/* USER CODE BEGIN 0 */}
+\PYG{c+cm}{/**}
+\PYG{c+cm}{  * @brief  UART経由でスペクトルデータを送信}
+\PYG{c+cm}{  * @retval None}
+\PYG{c+cm}{  */}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{print\PYGZus{}spectrum\PYGZus{}data}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{buf}\PYG{p}{[}\PYG{l+m+mi}{4096}\PYG{p}{];}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// フレームヘッダー}
+\PYG{+w}{    }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{+=}\PYG{+w}{ }\PYG{n}{snprintf}\PYG{p}{(}\PYG{n}{buf}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{buf}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}BEGIN,\PYGZdq{}}\PYG{p}{);}
+
+\PYG{+w}{    }\PYG{c+c1}{// 288個のデータ値}
+\PYG{+w}{    }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+m+mi}{288}\PYG{p}{;}\PYG{+w}{ }\PYG{o}{++}\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    	}\PYG{c+c1}{// 最後の値の後にもカンマを追加し、末尾でまとめてENDを追加}
+\PYG{+w}{        }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{+=}\PYG{+w}{ }\PYG{n}{snprintf}\PYG{p}{(}\PYG{n}{buf}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{buf}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}\PYGZpc{}u,\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{adc\PYGZus{}buffer}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]);}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{c+c1}{// フレームフッター（Pythonのreadlineのために、必ず\PYGZbs{}r\PYGZbs{}nを付ける）}
+\PYG{+w}{    }\PYG{n}{n}\PYG{+w}{ }\PYG{o}{+=}\PYG{+w}{ }\PYG{n}{snprintf}\PYG{p}{(}\PYG{n}{buf}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{buf}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{,}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}END}\PYG{l+s+se}{\PYGZbs{}r\PYGZbs{}n}\PYG{l+s}{\PYGZdq{}}\PYG{p}{);}
+
+\PYG{+w}{    }\PYG{c+c1}{// 一括で送信}
+\PYG{+w}{    }\PYG{n}{HAL\PYGZus{}UART\PYGZus{}Transmit}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{huart2}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{uint8\PYGZus{}t}\PYG{o}{*}\PYG{p}{)}\PYG{n}{buf}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}MAX\PYGZus{}DELAY}\PYG{p}{);}
+\PYG{p}{\PYGZcb{}}
+
+
+
+\PYG{c+cm}{/**}
+\PYG{c+cm}{  * @brief  ADC変換完了コールバック関数}
+\PYG{c+cm}{  * @note   DMAモードでは、この関数は指定された数のデータ転送がすべて完了した後に一度だけ呼び出される。}
+\PYG{c+cm}{  * @param  hadc: ADCハンドル}
+\PYG{c+cm}{  * @retval None}
+\PYG{c+cm}{  */}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{HAL\PYGZus{}ADC\PYGZus{}ConvCpltCallback}\PYG{p}{(}\PYG{n}{ADC\PYGZus{}HandleTypeDef}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{hadc}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{	}\PYG{c+c1}{// 対象のADC1であるかを確認}
+\PYG{+w}{  }\PYG{k}{if}\PYG{p}{(}\PYG{n}{hadc}\PYG{o}{\PYGZhy{}\PYGZgt{}}\PYG{n}{Instance}\PYG{+w}{ }\PYG{o}{==}\PYG{+w}{ }\PYG{n}{ADC1}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{	  }\PYG{c+c1}{// ハードウェアが自動的に288回のサンプリングと転送を完了したので、メインループに通知するためのフラグを設定する}
+\PYG{+w}{    }\PYG{n}{data\PYGZus{}ready\PYGZus{}flag}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{true}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\PYG{c+cm}{/* USER CODE END 0 */}
+
+\PYG{c+cm}{/**}
+\PYG{c+cm}{  * @brief  The application entry point.}
+\PYG{c+cm}{  * @retval int}
+\PYG{c+cm}{  */}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{main}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN 1 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END 1 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* MCU Configuration\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}*/}
+
+\PYG{+w}{  }\PYG{c+cm}{/* Reset of all peripherals, Initializes the Flash interface and the Systick. */}
+\PYG{+w}{  }\PYG{n}{HAL\PYGZus{}Init}\PYG{p}{();}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN Init */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END Init */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* Configure the system clock */}
+\PYG{+w}{  }\PYG{n}{SystemClock\PYGZus{}Config}\PYG{p}{();}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN SysInit */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END SysInit */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* Initialize all configured peripherals */}
+\PYG{+w}{  }\PYG{n}{MX\PYGZus{}GPIO\PYGZus{}Init}\PYG{p}{();}
+\PYG{+w}{  }\PYG{n}{MX\PYGZus{}DMA\PYGZus{}Init}\PYG{p}{();}
+\PYG{+w}{  }\PYG{n}{MX\PYGZus{}USART2\PYGZus{}UART\PYGZus{}Init}\PYG{p}{();}
+\PYG{+w}{  }\PYG{n}{MX\PYGZus{}ADC1\PYGZus{}Init}\PYG{p}{();}
+\PYG{+w}{  }\PYG{n}{MX\PYGZus{}TIM1\PYGZus{}Init}\PYG{p}{();}
+\PYG{+w}{  }\PYG{n}{MX\PYGZus{}TIM3\PYGZus{}Init}\PYG{p}{();}
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN 2 */}
+\PYG{+w}{    }\PYG{c+c1}{//\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}//}
+\PYG{+w}{    }\PYG{c+c1}{// 1. CLKクロック信号を起動 (TIM1のPWMで生成)}
+\PYG{+w}{    }\PYG{c+c1}{//\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}//}
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}TIM\PYGZus{}PWM\PYGZus{}Start}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{htim1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}CHANNEL\PYGZus{}1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{c+c1}{//\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}//}
+\PYG{+w}{    }\PYG{c+c1}{// 2. TRG信号の監視を開始 (TIM3の入力キャプチャで)}
+\PYG{+w}{    }\PYG{c+c1}{//    これにより、TIM3が外部TRG信号に応答を開始する}
+\PYG{+w}{    }\PYG{c+c1}{//\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}//}
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}TIM\PYGZus{}IC\PYGZus{}Start}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{htim3}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}CHANNEL\PYGZus{}1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{n}{HAL\PYGZus{}UART\PYGZus{}Transmit}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{huart2}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{uint8\PYGZus{}t}\PYG{o}{*}\PYG{p}{)}\PYG{l+s}{\PYGZdq{}Spectrometer Ready (Full\PYGZhy{}Hardware\PYGZhy{}Trigger Mode).}\PYG{l+s+se}{\PYGZbs{}r\PYGZbs{}n}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{49}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}MAX\PYGZus{}DELAY}\PYG{p}{);}
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END 2 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* Infinite loop */}
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN WHILE */}
+\PYG{+w}{    }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{)}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+cm}{/* USER CODE END WHILE */}
+
+\PYG{+w}{    }\PYG{c+cm}{/* USER CODE BEGIN 3 */}
+\PYG{+w}{    	}\PYG{c+c1}{// 3. スペクトル収集サイクルを1回トリガーする}
+\PYG{+w}{      }\PYG{n}{HAL\PYGZus{}GPIO\PYGZus{}WritePin}\PYG{p}{(}\PYG{n}{ST\PYGZus{}GPIO\PYGZus{}Port}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ST\PYGZus{}Pin}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{GPIO\PYGZus{}PIN\PYGZus{}SET}\PYG{p}{);}
+\PYG{+w}{      }\PYG{n}{HAL\PYGZus{}Delay}\PYG{p}{(}\PYG{l+m+mi}{10}\PYG{p}{);}\PYG{+w}{ }\PYG{c+c1}{// 積分時間を10msに設定（必要に応じて調整可能）}
+\PYG{+w}{      }\PYG{n}{HAL\PYGZus{}GPIO\PYGZus{}WritePin}\PYG{p}{(}\PYG{n}{ST\PYGZus{}GPIO\PYGZus{}Port}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ST\PYGZus{}Pin}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{GPIO\PYGZus{}PIN\PYGZus{}RESET}\PYG{p}{);}
+
+\PYG{+w}{      }\PYG{c+c1}{// 4. ADCとDMAを起動。ハードウェアは自動的にTIM3から転送されるTRG信号を288回待機する}
+\PYG{+w}{      }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}ADC\PYGZus{}Start\PYGZus{}DMA}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{hadc1}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{uint32\PYGZus{}t}\PYG{o}{*}\PYG{p}{)}\PYG{n}{adc\PYGZus{}buffer}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{NUM\PYGZus{}PIXELS}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{          }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{      }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{      }\PYG{c+c1}{// 5. 収集完了を待機。この間、CPUは完全にアイドル状態}
+\PYG{+w}{      }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{data\PYGZus{}ready\PYGZus{}flag}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}\PYGZcb{}}
+\PYG{+w}{      }\PYG{n}{data\PYGZus{}ready\PYGZus{}flag}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 次の収集のためにフラグをリセット}
+
+\PYG{+w}{      }\PYG{c+c1}{// 6. 収集完了後、データを処理して送信}
+\PYG{+w}{	  }\PYG{n}{print\PYGZus{}spectrum\PYGZus{}data}\PYG{p}{();}
+
+\PYG{+w}{      }\PYG{c+c1}{// 7. 100ms待機し、次の収集を開始}
+\PYG{+w}{      }\PYG{n}{HAL\PYGZus{}Delay}\PYG{p}{(}\PYG{l+m+mi}{100}\PYG{p}{);}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END 3 */}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{c+cm}{/**}
+\PYG{c+cm}{  * @brief System Clock Configuration}
+\PYG{c+cm}{  * @retval None}
+\PYG{c+cm}{  */}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{SystemClock\PYGZus{}Config}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}OscInitTypeDef}\PYG{+w}{ }\PYG{n}{RCC\PYGZus{}OscInitStruct}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{};}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}ClkInitTypeDef}\PYG{+w}{ }\PYG{n}{RCC\PYGZus{}ClkInitStruct}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{};}
+
+\PYG{+w}{  }\PYG{c+cm}{/** Configure the main internal regulator output voltage}
+\PYG{c+cm}{  */}
+\PYG{+w}{  }\PYG{n}{\PYGZus{}\PYGZus{}HAL\PYGZus{}RCC\PYGZus{}PWR\PYGZus{}CLK\PYGZus{}ENABLE}\PYG{p}{();}
+\PYG{+w}{  }\PYG{n}{\PYGZus{}\PYGZus{}HAL\PYGZus{}PWR\PYGZus{}VOLTAGESCALING\PYGZus{}CONFIG}\PYG{p}{(}\PYG{n}{PWR\PYGZus{}REGULATOR\PYGZus{}VOLTAGE\PYGZus{}SCALE1}\PYG{p}{);}
+
+\PYG{+w}{  }\PYG{c+cm}{/** Initializes the RCC Oscillators according to the specified parameters}
+\PYG{c+cm}{  * in the RCC\PYGZus{}OscInitTypeDef structure.}
+\PYG{c+cm}{  */}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}OscInitStruct}\PYG{p}{.}\PYG{n}{OscillatorType}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{RCC\PYGZus{}OSCILLATORTYPE\PYGZus{}HSE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}OscInitStruct}\PYG{p}{.}\PYG{n}{HSEState}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{RCC\PYGZus{}HSE\PYGZus{}ON}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}OscInitStruct}\PYG{p}{.}\PYG{n}{PLL}\PYG{p}{.}\PYG{n}{PLLState}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{RCC\PYGZus{}PLL\PYGZus{}ON}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}OscInitStruct}\PYG{p}{.}\PYG{n}{PLL}\PYG{p}{.}\PYG{n}{PLLSource}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{RCC\PYGZus{}PLLSOURCE\PYGZus{}HSE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}OscInitStruct}\PYG{p}{.}\PYG{n}{PLL}\PYG{p}{.}\PYG{n}{PLLM}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{4}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}OscInitStruct}\PYG{p}{.}\PYG{n}{PLL}\PYG{p}{.}\PYG{n}{PLLN}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{180}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}OscInitStruct}\PYG{p}{.}\PYG{n}{PLL}\PYG{p}{.}\PYG{n}{PLLP}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{RCC\PYGZus{}PLLP\PYGZus{}DIV2}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}OscInitStruct}\PYG{p}{.}\PYG{n}{PLL}\PYG{p}{.}\PYG{n}{PLLQ}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}OscInitStruct}\PYG{p}{.}\PYG{n}{PLL}\PYG{p}{.}\PYG{n}{PLLR}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}RCC\PYGZus{}OscConfig}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{RCC\PYGZus{}OscInitStruct}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{  }\PYG{c+cm}{/** Activate the Over\PYGZhy{}Drive mode}
+\PYG{c+cm}{  */}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}PWREx\PYGZus{}EnableOverDrive}\PYG{p}{()}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{  }\PYG{c+cm}{/** Initializes the CPU, AHB and APB buses clocks}
+\PYG{c+cm}{  */}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}ClkInitStruct}\PYG{p}{.}\PYG{n}{ClockType}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{RCC\PYGZus{}CLOCKTYPE\PYGZus{}HCLK}\PYG{o}{|}\PYG{n}{RCC\PYGZus{}CLOCKTYPE\PYGZus{}SYSCLK}
+\PYG{+w}{                              }\PYG{o}{|}\PYG{n}{RCC\PYGZus{}CLOCKTYPE\PYGZus{}PCLK1}\PYG{o}{|}\PYG{n}{RCC\PYGZus{}CLOCKTYPE\PYGZus{}PCLK2}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}ClkInitStruct}\PYG{p}{.}\PYG{n}{SYSCLKSource}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{RCC\PYGZus{}SYSCLKSOURCE\PYGZus{}PLLCLK}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}ClkInitStruct}\PYG{p}{.}\PYG{n}{AHBCLKDivider}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{RCC\PYGZus{}SYSCLK\PYGZus{}DIV1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}ClkInitStruct}\PYG{p}{.}\PYG{n}{APB1CLKDivider}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{RCC\PYGZus{}HCLK\PYGZus{}DIV4}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{RCC\PYGZus{}ClkInitStruct}\PYG{p}{.}\PYG{n}{APB2CLKDivider}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{RCC\PYGZus{}HCLK\PYGZus{}DIV2}\PYG{p}{;}
+
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}RCC\PYGZus{}ClockConfig}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{RCC\PYGZus{}ClkInitStruct}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{FLASH\PYGZus{}LATENCY\PYGZus{}5}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{c+cm}{/**}
+\PYG{c+cm}{  * @brief ADC1 Initialization Function}
+\PYG{c+cm}{  * @param None}
+\PYG{c+cm}{  * @retval None}
+\PYG{c+cm}{  */}
+\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{MX\PYGZus{}ADC1\PYGZus{}Init}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN ADC1\PYGZus{}Init 0 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END ADC1\PYGZus{}Init 0 */}
+
+\PYG{+w}{  }\PYG{n}{ADC\PYGZus{}ChannelConfTypeDef}\PYG{+w}{ }\PYG{n}{sConfig}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{};}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN ADC1\PYGZus{}Init 1 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END ADC1\PYGZus{}Init 1 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)}
+\PYG{c+cm}{  */}
+\PYG{+w}{  }\PYG{n}{hadc1}\PYG{p}{.}\PYG{n}{Instance}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ADC1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{hadc1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{ClockPrescaler}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ADC\PYGZus{}CLOCK\PYGZus{}SYNC\PYGZus{}PCLK\PYGZus{}DIV4}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{hadc1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{Resolution}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ADC\PYGZus{}RESOLUTION\PYGZus{}12B}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{hadc1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{ScanConvMode}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{DISABLE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{hadc1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{ContinuousConvMode}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{DISABLE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{hadc1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{DiscontinuousConvMode}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{DISABLE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{hadc1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{ExternalTrigConvEdge}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ADC\PYGZus{}EXTERNALTRIGCONVEDGE\PYGZus{}RISING}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{hadc1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{ExternalTrigConv}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ADC\PYGZus{}EXTERNALTRIGCONV\PYGZus{}T3\PYGZus{}TRGO}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{hadc1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{DataAlign}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ADC\PYGZus{}DATAALIGN\PYGZus{}RIGHT}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{hadc1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{NbrOfConversion}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{hadc1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{DMAContinuousRequests}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{DISABLE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{hadc1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{EOCSelection}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ADC\PYGZus{}EOC\PYGZus{}SINGLE\PYGZus{}CONV}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}ADC\PYGZus{}Init}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{hadc1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{  }\PYG{c+cm}{/** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.}
+\PYG{c+cm}{  */}
+\PYG{+w}{  }\PYG{n}{sConfig}\PYG{p}{.}\PYG{n}{Channel}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ADC\PYGZus{}CHANNEL\PYGZus{}1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sConfig}\PYG{p}{.}\PYG{n}{Rank}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sConfig}\PYG{p}{.}\PYG{n}{SamplingTime}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ADC\PYGZus{}SAMPLETIME\PYGZus{}3CYCLES}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}ADC\PYGZus{}ConfigChannel}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{hadc1}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{sConfig}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN ADC1\PYGZus{}Init 2 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END ADC1\PYGZus{}Init 2 */}
+
+\PYG{p}{\PYGZcb{}}
+
+\PYG{c+cm}{/**}
+\PYG{c+cm}{  * @brief TIM1 Initialization Function}
+\PYG{c+cm}{  * @param None}
+\PYG{c+cm}{  * @retval None}
+\PYG{c+cm}{  */}
+\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{MX\PYGZus{}TIM1\PYGZus{}Init}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN TIM1\PYGZus{}Init 0 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END TIM1\PYGZus{}Init 0 */}
+
+\PYG{+w}{  }\PYG{n}{TIM\PYGZus{}ClockConfigTypeDef}\PYG{+w}{ }\PYG{n}{sClockSourceConfig}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{};}
+\PYG{+w}{  }\PYG{n}{TIM\PYGZus{}MasterConfigTypeDef}\PYG{+w}{ }\PYG{n}{sMasterConfig}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{};}
+\PYG{+w}{  }\PYG{n}{TIM\PYGZus{}OC\PYGZus{}InitTypeDef}\PYG{+w}{ }\PYG{n}{sConfigOC}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{};}
+\PYG{+w}{  }\PYG{n}{TIM\PYGZus{}BreakDeadTimeConfigTypeDef}\PYG{+w}{ }\PYG{n}{sBreakDeadTimeConfig}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{};}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN TIM1\PYGZus{}Init 1 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END TIM1\PYGZus{}Init 1 */}
+\PYG{+w}{  }\PYG{n}{htim1}\PYG{p}{.}\PYG{n}{Instance}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{htim1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{Prescaler}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{htim1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{CounterMode}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}COUNTERMODE\PYGZus{}UP}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{htim1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{Period}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{180\PYGZhy{}1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{htim1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{ClockDivision}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}CLOCKDIVISION\PYGZus{}DIV1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{htim1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{RepetitionCounter}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{htim1}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{AutoReloadPreload}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}AUTORELOAD\PYGZus{}PRELOAD\PYGZus{}DISABLE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}TIM\PYGZus{}Base\PYGZus{}Init}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{htim1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{sClockSourceConfig}\PYG{p}{.}\PYG{n}{ClockSource}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}CLOCKSOURCE\PYGZus{}INTERNAL}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}TIM\PYGZus{}ConfigClockSource}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{htim1}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{sClockSourceConfig}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}TIM\PYGZus{}PWM\PYGZus{}Init}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{htim1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{sMasterConfig}\PYG{p}{.}\PYG{n}{MasterOutputTrigger}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}TRGO\PYGZus{}RESET}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sMasterConfig}\PYG{p}{.}\PYG{n}{MasterSlaveMode}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}MASTERSLAVEMODE\PYGZus{}DISABLE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}TIMEx\PYGZus{}MasterConfigSynchronization}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{htim1}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{sMasterConfig}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{sConfigOC}\PYG{p}{.}\PYG{n}{OCMode}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}OCMODE\PYGZus{}PWM1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sConfigOC}\PYG{p}{.}\PYG{n}{Pulse}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{90}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sConfigOC}\PYG{p}{.}\PYG{n}{OCPolarity}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}OCPOLARITY\PYGZus{}HIGH}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sConfigOC}\PYG{p}{.}\PYG{n}{OCNPolarity}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}OCNPOLARITY\PYGZus{}HIGH}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sConfigOC}\PYG{p}{.}\PYG{n}{OCFastMode}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}OCFAST\PYGZus{}DISABLE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sConfigOC}\PYG{p}{.}\PYG{n}{OCIdleState}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}OCIDLESTATE\PYGZus{}RESET}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sConfigOC}\PYG{p}{.}\PYG{n}{OCNIdleState}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}OCNIDLESTATE\PYGZus{}RESET}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}TIM\PYGZus{}PWM\PYGZus{}ConfigChannel}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{htim1}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{sConfigOC}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}CHANNEL\PYGZus{}1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{sBreakDeadTimeConfig}\PYG{p}{.}\PYG{n}{OffStateRunMode}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}OSSR\PYGZus{}DISABLE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sBreakDeadTimeConfig}\PYG{p}{.}\PYG{n}{OffStateIDLEMode}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}OSSI\PYGZus{}DISABLE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sBreakDeadTimeConfig}\PYG{p}{.}\PYG{n}{LockLevel}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}LOCKLEVEL\PYGZus{}OFF}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sBreakDeadTimeConfig}\PYG{p}{.}\PYG{n}{DeadTime}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sBreakDeadTimeConfig}\PYG{p}{.}\PYG{n}{BreakState}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}BREAK\PYGZus{}DISABLE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sBreakDeadTimeConfig}\PYG{p}{.}\PYG{n}{BreakPolarity}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}BREAKPOLARITY\PYGZus{}HIGH}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sBreakDeadTimeConfig}\PYG{p}{.}\PYG{n}{AutomaticOutput}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}AUTOMATICOUTPUT\PYGZus{}DISABLE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}TIMEx\PYGZus{}ConfigBreakDeadTime}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{htim1}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{sBreakDeadTimeConfig}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN TIM1\PYGZus{}Init 2 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END TIM1\PYGZus{}Init 2 */}
+\PYG{+w}{  }\PYG{n}{HAL\PYGZus{}TIM\PYGZus{}MspPostInit}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{htim1}\PYG{p}{);}
+
+\PYG{p}{\PYGZcb{}}
+
+\PYG{c+cm}{/**}
+\PYG{c+cm}{  * @brief TIM3 Initialization Function}
+\PYG{c+cm}{  * @param None}
+\PYG{c+cm}{  * @retval None}
+\PYG{c+cm}{  */}
+\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{MX\PYGZus{}TIM3\PYGZus{}Init}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN TIM3\PYGZus{}Init 0 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END TIM3\PYGZus{}Init 0 */}
+
+\PYG{+w}{  }\PYG{n}{TIM\PYGZus{}ClockConfigTypeDef}\PYG{+w}{ }\PYG{n}{sClockSourceConfig}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{};}
+\PYG{+w}{  }\PYG{n}{TIM\PYGZus{}MasterConfigTypeDef}\PYG{+w}{ }\PYG{n}{sMasterConfig}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{};}
+\PYG{+w}{  }\PYG{n}{TIM\PYGZus{}IC\PYGZus{}InitTypeDef}\PYG{+w}{ }\PYG{n}{sConfigIC}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{};}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN TIM3\PYGZus{}Init 1 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END TIM3\PYGZus{}Init 1 */}
+\PYG{+w}{  }\PYG{n}{htim3}\PYG{p}{.}\PYG{n}{Instance}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM3}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{htim3}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{Prescaler}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{htim3}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{CounterMode}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}COUNTERMODE\PYGZus{}UP}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{htim3}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{Period}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{65535}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{htim3}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{ClockDivision}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}CLOCKDIVISION\PYGZus{}DIV1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{htim3}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{AutoReloadPreload}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}AUTORELOAD\PYGZus{}PRELOAD\PYGZus{}DISABLE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}TIM\PYGZus{}Base\PYGZus{}Init}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{htim3}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{sClockSourceConfig}\PYG{p}{.}\PYG{n}{ClockSource}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}CLOCKSOURCE\PYGZus{}INTERNAL}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}TIM\PYGZus{}ConfigClockSource}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{htim3}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{sClockSourceConfig}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}TIM\PYGZus{}IC\PYGZus{}Init}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{htim3}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{sMasterConfig}\PYG{p}{.}\PYG{n}{MasterOutputTrigger}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}TRGO\PYGZus{}OC1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sMasterConfig}\PYG{p}{.}\PYG{n}{MasterSlaveMode}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}MASTERSLAVEMODE\PYGZus{}DISABLE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}TIMEx\PYGZus{}MasterConfigSynchronization}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{htim3}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{sMasterConfig}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{n}{sConfigIC}\PYG{p}{.}\PYG{n}{ICPolarity}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}INPUTCHANNELPOLARITY\PYGZus{}RISING}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sConfigIC}\PYG{p}{.}\PYG{n}{ICSelection}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}ICSELECTION\PYGZus{}DIRECTTI}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sConfigIC}\PYG{p}{.}\PYG{n}{ICPrescaler}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}ICPSC\PYGZus{}DIV1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{sConfigIC}\PYG{p}{.}\PYG{n}{ICFilter}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}TIM\PYGZus{}IC\PYGZus{}ConfigChannel}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{htim3}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{sConfigIC}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{TIM\PYGZus{}CHANNEL\PYGZus{}1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN TIM3\PYGZus{}Init 2 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END TIM3\PYGZus{}Init 2 */}
+
+\PYG{p}{\PYGZcb{}}
+
+\PYG{c+cm}{/**}
+\PYG{c+cm}{  * @brief USART2 Initialization Function}
+\PYG{c+cm}{  * @param None}
+\PYG{c+cm}{  * @retval None}
+\PYG{c+cm}{  */}
+\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{MX\PYGZus{}USART2\PYGZus{}UART\PYGZus{}Init}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN USART2\PYGZus{}Init 0 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END USART2\PYGZus{}Init 0 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN USART2\PYGZus{}Init 1 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END USART2\PYGZus{}Init 1 */}
+\PYG{+w}{  }\PYG{n}{huart2}\PYG{p}{.}\PYG{n}{Instance}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{USART2}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{huart2}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{BaudRate}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{115200}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{huart2}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{WordLength}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{UART\PYGZus{}WORDLENGTH\PYGZus{}8B}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{huart2}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{StopBits}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{UART\PYGZus{}STOPBITS\PYGZus{}1}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{huart2}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{Parity}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{UART\PYGZus{}PARITY\PYGZus{}NONE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{huart2}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{Mode}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{UART\PYGZus{}MODE\PYGZus{}TX\PYGZus{}RX}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{huart2}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{HwFlowCtl}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{UART\PYGZus{}HWCONTROL\PYGZus{}NONE}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{huart2}\PYG{p}{.}\PYG{n}{Init}\PYG{p}{.}\PYG{n}{OverSampling}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{UART\PYGZus{}OVERSAMPLING\PYGZus{}16}\PYG{p}{;}
+\PYG{+w}{  }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{HAL\PYGZus{}UART\PYGZus{}Init}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{huart2}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!=}\PYG{+w}{ }\PYG{n}{HAL\PYGZus{}OK}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Error\PYGZus{}Handler}\PYG{p}{();}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN USART2\PYGZus{}Init 2 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END USART2\PYGZus{}Init 2 */}
+
+\PYG{p}{\PYGZcb{}}
+
+\PYG{c+cm}{/**}
+\PYG{c+cm}{  * Enable DMA controller clock}
+\PYG{c+cm}{  */}
+\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{MX\PYGZus{}DMA\PYGZus{}Init}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+
+\PYG{+w}{  }\PYG{c+cm}{/* DMA controller clock enable */}
+\PYG{+w}{  }\PYG{n}{\PYGZus{}\PYGZus{}HAL\PYGZus{}RCC\PYGZus{}DMA2\PYGZus{}CLK\PYGZus{}ENABLE}\PYG{p}{();}
+
+\PYG{+w}{  }\PYG{c+cm}{/* DMA interrupt init */}
+\PYG{+w}{  }\PYG{c+cm}{/* DMA2\PYGZus{}Stream0\PYGZus{}IRQn interrupt configuration */}
+\PYG{+w}{  }\PYG{n}{HAL\PYGZus{}NVIC\PYGZus{}SetPriority}\PYG{p}{(}\PYG{n}{DMA2\PYGZus{}Stream0\PYGZus{}IRQn}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{);}
+\PYG{+w}{  }\PYG{n}{HAL\PYGZus{}NVIC\PYGZus{}EnableIRQ}\PYG{p}{(}\PYG{n}{DMA2\PYGZus{}Stream0\PYGZus{}IRQn}\PYG{p}{);}
+
+\PYG{p}{\PYGZcb{}}
+
+\PYG{c+cm}{/**}
+\PYG{c+cm}{  * @brief GPIO Initialization Function}
+\PYG{c+cm}{  * @param None}
+\PYG{c+cm}{  * @retval None}
+\PYG{c+cm}{  */}
+\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{MX\PYGZus{}GPIO\PYGZus{}Init}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{n}{GPIO\PYGZus{}InitTypeDef}\PYG{+w}{ }\PYG{n}{GPIO\PYGZus{}InitStruct}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{};}
+\PYG{c+cm}{/* USER CODE BEGIN MX\PYGZus{}GPIO\PYGZus{}Init\PYGZus{}1 */}
+\PYG{c+cm}{/* USER CODE END MX\PYGZus{}GPIO\PYGZus{}Init\PYGZus{}1 */}
+
+\PYG{+w}{  }\PYG{c+cm}{/* GPIO Ports Clock Enable */}
+\PYG{+w}{  }\PYG{n}{\PYGZus{}\PYGZus{}HAL\PYGZus{}RCC\PYGZus{}GPIOC\PYGZus{}CLK\PYGZus{}ENABLE}\PYG{p}{();}
+\PYG{+w}{  }\PYG{n}{\PYGZus{}\PYGZus{}HAL\PYGZus{}RCC\PYGZus{}GPIOH\PYGZus{}CLK\PYGZus{}ENABLE}\PYG{p}{();}
+\PYG{+w}{  }\PYG{n}{\PYGZus{}\PYGZus{}HAL\PYGZus{}RCC\PYGZus{}GPIOA\PYGZus{}CLK\PYGZus{}ENABLE}\PYG{p}{();}
+\PYG{+w}{  }\PYG{n}{\PYGZus{}\PYGZus{}HAL\PYGZus{}RCC\PYGZus{}GPIOB\PYGZus{}CLK\PYGZus{}ENABLE}\PYG{p}{();}
+
+\PYG{+w}{  }\PYG{c+cm}{/*Configure GPIO pin Output Level */}
+\PYG{+w}{  }\PYG{n}{HAL\PYGZus{}GPIO\PYGZus{}WritePin}\PYG{p}{(}\PYG{n}{ST\PYGZus{}GPIO\PYGZus{}Port}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ST\PYGZus{}Pin}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{GPIO\PYGZus{}PIN\PYGZus{}RESET}\PYG{p}{);}
+
+\PYG{+w}{  }\PYG{c+cm}{/*Configure GPIO pin : ST\PYGZus{}Pin */}
+\PYG{+w}{  }\PYG{n}{GPIO\PYGZus{}InitStruct}\PYG{p}{.}\PYG{n}{Pin}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ST\PYGZus{}Pin}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{GPIO\PYGZus{}InitStruct}\PYG{p}{.}\PYG{n}{Mode}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{GPIO\PYGZus{}MODE\PYGZus{}OUTPUT\PYGZus{}PP}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{GPIO\PYGZus{}InitStruct}\PYG{p}{.}\PYG{n}{Pull}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{GPIO\PYGZus{}NOPULL}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{GPIO\PYGZus{}InitStruct}\PYG{p}{.}\PYG{n}{Speed}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{GPIO\PYGZus{}SPEED\PYGZus{}FREQ\PYGZus{}LOW}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{HAL\PYGZus{}GPIO\PYGZus{}Init}\PYG{p}{(}\PYG{n}{ST\PYGZus{}GPIO\PYGZus{}Port}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{GPIO\PYGZus{}InitStruct}\PYG{p}{);}
+
+\PYG{+w}{  }\PYG{c+cm}{/*Configure GPIO pin : EOS\PYGZus{}Pin */}
+\PYG{+w}{  }\PYG{n}{GPIO\PYGZus{}InitStruct}\PYG{p}{.}\PYG{n}{Pin}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{EOS\PYGZus{}Pin}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{GPIO\PYGZus{}InitStruct}\PYG{p}{.}\PYG{n}{Mode}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{GPIO\PYGZus{}MODE\PYGZus{}IT\PYGZus{}RISING}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{GPIO\PYGZus{}InitStruct}\PYG{p}{.}\PYG{n}{Pull}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{GPIO\PYGZus{}NOPULL}\PYG{p}{;}
+\PYG{+w}{  }\PYG{n}{HAL\PYGZus{}GPIO\PYGZus{}Init}\PYG{p}{(}\PYG{n}{EOS\PYGZus{}GPIO\PYGZus{}Port}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{GPIO\PYGZus{}InitStruct}\PYG{p}{);}
+
+\PYG{c+cm}{/* USER CODE BEGIN MX\PYGZus{}GPIO\PYGZus{}Init\PYGZus{}2 */}
+\PYG{c+cm}{/* USER CODE END MX\PYGZus{}GPIO\PYGZus{}Init\PYGZus{}2 */}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{c+cm}{/* USER CODE BEGIN 4 */}
+
+\PYG{c+cm}{/* USER CODE END 4 */}
+
+\PYG{c+cm}{/**}
+\PYG{c+cm}{  * @brief  This function is executed in case of error occurrence.}
+\PYG{c+cm}{  * @retval None}
+\PYG{c+cm}{  */}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{Error\PYGZus{}Handler}\PYG{p}{(}\PYG{k+kt}{void}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN Error\PYGZus{}Handler\PYGZus{}Debug */}
+\PYG{+w}{  }\PYG{c+cm}{/* User can add his own implementation to report the HAL error return state */}
+\PYG{+w}{  }\PYG{n}{\PYGZus{}\PYGZus{}disable\PYGZus{}irq}\PYG{p}{();}
+\PYG{+w}{  }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{)}
+\PYG{+w}{  }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END Error\PYGZus{}Handler\PYGZus{}Debug */}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{c+cp}{\PYGZsh{}ifdef  USE\PYGZus{}FULL\PYGZus{}ASSERT}
+\PYG{c+cm}{/**}
+\PYG{c+cm}{  * @brief  Reports the name of the source file and the source line number}
+\PYG{c+cm}{  *         where the assert\PYGZus{}param error has occurred.}
+\PYG{c+cm}{  * @param  file: pointer to the source file name}
+\PYG{c+cm}{  * @param  line: assert\PYGZus{}param error line source number}
+\PYG{c+cm}{  * @retval None}
+\PYG{c+cm}{  */}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{assert\PYGZus{}failed}\PYG{p}{(}\PYG{k+kt}{uint8\PYGZus{}t}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{file}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{uint32\PYGZus{}t}\PYG{+w}{ }\PYG{n}{line}\PYG{p}{)}
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE BEGIN 6 */}
+\PYG{+w}{  }\PYG{c+cm}{/* User can add his own implementation to report the file name and line number,}
+\PYG{c+cm}{     ex: printf(\PYGZdq{}Wrong parameters value: file \PYGZpc{}s on line \PYGZpc{}d\PYGZbs{}r\PYGZbs{}n\PYGZdq{}, file, line) */}
+\PYG{+w}{  }\PYG{c+cm}{/* USER CODE END 6 */}
+\PYG{p}{\PYGZcb{}}
+\PYG{c+cp}{\PYGZsh{}endif }\PYG{c+cm}{/* USE\PYGZus{}FULL\PYGZus{}ASSERT */}
+\end{MintedVerbatim}
