@@ -1,8 +1,19 @@
 \documentclass{classes/report}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{siunitx}
+\usepackage{subfiles}   % 末尾使用 \subfile 时需要
+\usepackage{amsmath}    % For \text{} in math mode
+\usepackage{placeins}
+
+\DeclareSIUnit{\MSPS}{MSPS}
+
 
 \begin{document}
 
 \pagenumbering{roman}
+
+
 \subfile{sections/title}
 \newpage
 
@@ -10,13 +21,30 @@
 \clearpage
 
 \pagenumbering{arabic}
-
-\subfile{sections/abstract}
+\subfile{sections/1_abstract}
 \newpage
 
-\subfile{sections/main_issue}
+\subfile{sections/2_system}
+\newpage
+
+\subfile{sections/3_method}
+\newpage
+
+\subfile{sections/4_experimental}
+\newpage
+
+\subfile{sections/5_ecological_mapping}
+\newpage
+
+\subfile{sections/6_conclusion}
 \newpage
 
 \subfile{sections/references}
+\newpage
+
+\subfile{sections/acknowledgments}
+\newpage
+
+
 
 \end{document}

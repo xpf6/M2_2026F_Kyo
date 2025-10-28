@@ -1,0 +1,41 @@
+%! TEX root = ../main.tex
+\documentclass[main]{subfiles}
+
+\begin{document}
+\chapter{提案手法：GNSS品質監視に基づくロバスト自己位置推定}
+Proposed Method: Robust Localization based on GNSS Quality Monitoring
+写上大棚和照片
+\section{問題の再定義：農業用ハウスにおけるGNSS信号品質の特性分析}
+実測したデータ（良好時と不良時の/fixメッセージの協方差、衛星数、FIX/FLOAT状態の遷移など）を提示し、
+ハウス環境におけるGNSS信号の不安定性と品質指標（協方差）の信頼性（正直さ）を定量的に示す。
+TFツリーを示し、特にLiDARの傾斜搭載について言及する。
+
+\section{ベースライン：LiDAR慣性オドメトリ (LIO)}
+FAST-LIO2の概要と、本研究における適用方法（IMUキャリブレーション含む）を述べる。
+
+LIO単独での精度限界（ドリフト）を示すための予備実験結果（あれば）を提示する。
+
+\section{提案手法：GNSS品質監視モジュールと適応的EKF融合} 
+C12880MAのデータシート要求（数MHz）に対し、
+先行研究（割り込み方式）では数十～百数十kHzが限界であったことを示す（君のTable 1を引用）。
+
+
+\subsection{全体アーキテクチャ} 
+LIO、Wheel Odometry、GNSS Supervisor Module、EKF (robot localization) からなる融合システムのブロック図を示す。
+
+\subsection{GNSS品質監視モジュール}
+GNSSデータ（/fix）を入力とし、その品質（主に協方差行列、
+必要ならFIX/FLOAT状態なども加味）を評価し、「信頼できるデータのみ」をEKFへ送る、
+あるいは「品質情報を重みとして」EKFへ送るアルゴリズムを提案する（閾値処理や信頼度スケーリングなど）。
+このモジュールが新規性の中核であることを強調する。
+
+\subsection{EKFによる状態推定} 
+Robot localization を用い、LIO (Wheel Odom) を
+高頻度の主要な運動推定源とし、品質監視モジュールを経由した
+GNSSデータを低頻度の絶対位置補正源として融合する設定を説明する。
+
+\section{期待される効果}
+GNSS信号が良いときはその精度を活用し、悪いときはLIOによってドリフトを抑制し、
+全体として精度と頑健性を両立できることを論理的に説明する。
+
+\end{document}
