@@ -2,24 +2,112 @@
 \documentclass[main]{subfiles}
 
 \begin{document}
-\chapter{応用：生態環境マッピング (Application: Ecological Mapping)}
 
-\section{マッピング手法}
-第4章で最も精度が高いと評価された提案手法による自己位置推定軌跡を用いることを明記する。
+\chapter{生態環境マッピング}
+本章では，第2章で開発したセンサユニットと位置推定システムを統合し，
+実際の圃場環境における生態情報の空間マッピングを行う．
 
-第2章で開発した高速生態センサユニットからのデータ（スペクトル、CO2、温湿度）を、
-高精度なタイムスタンプと位置情報に同期させて3Dマップ上に重畳（オーバーレイ）する手法を
-説明する（必要であれば補間手法なども）。
+\section{マッピング手法と実験条件}
+本研究の最終目標は完全自律走行によるモニタリングであるが，
+データ取得した時点では自律走行アルゴリズムのロバスト性を検証中である．そのため，
+本章で報告する実験は，手動操作によりAGVを走行させてデータを取得したものである．
+本実験の主目的は，GNSS/LiDARによる高精度な位置情報と，
+非同期に取得される環境センサデータを正確に融合し，
+将来的な自律走行システムにおいて期待される環境マップ生成機能の有効性を実証することである．
+
+具体的なデータ処理手順は以下の通りである．
+\begin{enumerate}
+    \item \textbf{データの同期:} 
+    センサユニットから取得された環境データ（スペクトル，CO$_2$，温湿度，気圧）に対し，タイムスタンプに基づいて最も近い位置情報（GNSS/LiDARオドメトリ）を割り当てる．
+    \item \textbf{データの正規化:} 
+    各環境データの微細な変動を視覚化するため，取得データの最小値および最大値を用いてカラーマップのダイナミックレンジを動的に調整する．
+    \item \textbf{可視化:} 
+    2次元平面（$XY$平面）上の軌跡としてプロットし，各地点におけるセンサ値を色情報として重畳表示する．
+\end{enumerate}
 
 \section{生成された生態環境マップ}
-実際に生成した各種生態環境マップ（スペクトル指標マップ、CO2濃度分布マップ、温湿度マップなど）を
-提示する
-%（Fig. \ref{fig:spectral_map}, Fig. \ref{fig:co2_map} など）。
 
-\subsection{マッピング結果の考察} 
-生成されたマップから読み取れる空間的な分布パターンや、
-異なる環境要因間の相関（例：日照条件とスペクトル、CO2濃度と植物活性など）について考察する。
+10月23日に収集したデータセットに基づき生成された各種環境マップを以下に示す．
+実験当日の天候は晴れであり，ハウスの側面は換気のため開放された状態であった．
 
-高精度な自己位置推定が、意味のある生態環境マップ生成にいかに貢献するかを具体的に示す
+% --- Temperature & Humidity ---
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/5/bag_20251023_112054_agri_xy_temp.pdf}
+        \caption{Temperature map ($^\circ$C).}
+        \label{fig:map_temp}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/5/bag_20251023_112054_agri_xy_humidity.pdf}
+        \caption{Relative humidity map (\%).}
+        \label{fig:map_humidity}
+    \end{minipage}
+\end{figure}
+
+% --- CO2 & Pressure ---
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/5/bag_20251023_112054_agri_xy_co2.pdf}
+        \caption{CO$_2$ concentration map (ppm).}
+        \label{fig:map_co2}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/5/bag_20251023_112054_agri_xy_pressure.pdf}
+        \caption{Atmospheric pressure map (hPa).}
+        \label{fig:map_pressure}
+    \end{minipage}
+\end{figure}
+
+% --- Spectral peak wavelength ---
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/5/bag_20251023_112054_agri_xy_peaklambda.pdf}
+    \caption{Spectral peak wavelength map (nm).
+    Frequent colour changes along the trajectory reflect differences in reflectance characteristics between vegetation (greenish regions) and soil or gaps (bluish regions).}
+    \label{fig:map_spectral}
+\end{figure}
+
+\clearpage
+
+\section{マッピング結果の考察}
+
+\subsection{スペクトル特徴による植生検出}
+
+Fig.~\ref{fig:map_spectral}に示す分光データのピーク波長マップにおいて，
+軌跡上の色が頻繁に変化していることが確認できる．
+詳細に見ると，約550\,nm（緑色帯域）にピークを持つデータ点と，
+それ以外の波長帯域（青色や近赤外領域など）にピークを持つデータ点が混在している．
+これは，AGVが桑の木の下を通過した際には葉緑素による緑色反射が支配的になり，
+株間の土壌や空隙を通過した際には異なる反射特性が観測されたことを示唆している．
+この結果は，本システムが移動しながら，対象物の材質や植生の有無といった光学的な
+特徴を高分解能に識別可能であることを実証している．
+
+\subsection{微気象データの安定性と環境勾配}
+
+環境センサ（温度・湿度・CO$_2$・気圧）のマッピング結果（Fig.~\ref{fig:map_temp}--\ref{fig:map_pressure}）について考察する．
+本実験は通気性の高い開放型ハウスで実施されたため，ハウス内外での巨視的な環境差は極めて小さい条件下であった．
+それにもかかわらず，データの正規化表示により，以下の微細な環境特性が明らかになった．
+
+\begin{itemize}
+    \item \textbf{温度と湿度の逆相関:}
+    Fig.~\ref{fig:map_temp}（温度）とFig.~\ref{fig:map_humidity}（湿度）を比較すると，温度が高いエリアでは湿度が相対的に低く，温度が低いエリアでは湿度が高いという，物理法則（空気線図）に整合する\textbf{逆相関}が明瞭に観測された．
+    これは，提案センサシステムがノイズに埋もれることなく，わずかな物理的変動を空間分布として捉えられていることを示している．
+    
+    \item \textbf{CO$_2$濃度の空間勾配:}
+    Fig.~\ref{fig:map_co2}に示すように，CO$_2$濃度はおおよそ400～510\,ppmの範囲で推移した．
+    特に，ハウス奥側（図の上部ループ付近）において濃度が高まる傾向が見られる．
+    これは，換気の影響が届きにくい領域での空気の滞留や，植生による局所的な呼吸の影響を捉えている可能性がある．
+\end{itemize}
+
+以上の結果より，提案システムは，GNSS信号と環境センサデータを高精度に統合し，圃場内の空間的な環境マップを生成する能力を有していることが確認された．
+本実験は手動走行によるものであったが，得られたマップの品質は，自律走行システムに統合された際にも同様に高精細な環境モニタリングが可能であることを示唆する期待通りの結果（expected result）である．
 
 \end{document}
