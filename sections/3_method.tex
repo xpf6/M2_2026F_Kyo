@@ -2,40 +2,183 @@
 \documentclass[main]{subfiles}
 
 \begin{document}
-\chapter{提案手法：GNSS品質監視に基づくロバスト自己位置推定}
-Proposed Method: Robust Localization based on GNSS Quality Monitoring
-写上大棚和照片
-\section{問題の再定義：農業用ハウスにおけるGNSS信号品質の特性分析}
-実測したデータ（良好時と不良時の/fixメッセージの協方差、衛星数、FIX/FLOAT状態の遷移など）を提示し、
-ハウス環境におけるGNSS信号の不安定性と品質指標（協方差）の信頼性（正直さ）を定量的に示す。
-TFツリーを示し、特にLiDARの傾斜搭載について言及する。
 
-\section{ベースライン：LiDAR慣性オドメトリ (LIO)}
-FAST-LIO2の概要と、本研究における適用方法（IMUキャリブレーション含む）を述べる。
+\chapter{提案手法：GNSS品質監視に基づくLIO--Graph SLAM統合自己位置推定}
+\label{ch:method}
 
-LIO単独での精度限界（ドリフト）を示すための予備実験結果（あれば）を提示する。
+\section{問題設定と故障モード}
+\label{sec:problem_definition}
+農業用ハウス環境におけるRTK-GNSSは，多くの時間帯で高精度に利用可能である一方，
+遮蔽・マルチパス・差分補正の途絶等により，測位品質が間欠的に劣化する．
+本研究では，この品質劣化を単一の現象として扱わず，
+オンラインで区別可能な故障モードとして次の3種類に整理する．
 
-\section{提案手法：GNSS品質監視モジュールと適応的EKF融合} 
-C12880MAのデータシート要求（数MHz）に対し、
-先行研究（割り込み方式）では数十～百数十kHzが限界であったことを示す（君のTable 1を引用）。
+\begin{enumerate}
+  \item \textbf{GNSS利用不可能}\\
+  no-fix，使用衛星数不足，差分補正の途絶（RTCM ageの増大）等により，
+  測位が成立しない，あるいは測定として利用できない状態である．これは測定欠落に相当する．
+  \item \textbf{危険な誤誘導情報（HMI: Hazardously Misleading Information）／外れ値混入}\\
+  受信機はRTK-FIX等の状態を報告し，共分散も小さいにもかかわらず，実際の測位が大きく偏り，
+  推定軌跡に不連続な位置の飛び（位置ジャンプ）を生じる状態である．本研究の焦点は，
+  この見かけ上は良好だが誤っている測位の抑制にある．
+  \item \textbf{LIOの幾何学的退化（LiDARデジェネラシー）と不整地擾乱}\\
+  ハウス内通路等では点群幾何が単調となり，可観測性が低下してLIOが退化し得る．
+  また不整地では車輪スリップが顕著であり，実験では，Wheel Odometryは自己位置推定源としては不適切と判断した．
+\end{enumerate}
 
+本研究の目的は，GNSSが高精度だが，利用不可が間欠的に発生し，まれにHMIが出現する統計的特性をもつ状況下で，
+後端のグラフ最適化を汚染しないことを最優先としつつ，
+高品質RTK拘束によりLIOの長期ドリフトを抑制する統合推定系を構築することである．
+そのために，後端へ注入するGNSS拘束をオンラインで選別する品質監視モジュールを設計する．
 
-\subsection{全体アーキテクチャ} 
-LIO、Wheel Odometry、GNSS Supervisor Module、EKF (robot localization) からなる融合システムのブロック図を示す。
+\section{全体システム構成（FAST-LIOフロントエンド＋RTAB-Mapバックエンド）}
+\label{sec:system_overview}
+本研究では，前端にFAST-LIOを用いて高頻度な相対オドメトリを生成し，
+後端にRTAB-Mapを用いてループ閉合とグラフ最適化を行う．
+GNSSはRTAB-Mapの拘束入力として用い，robot\_localizationは使用しない．
 
-\subsection{GNSS品質監視モジュール}
-GNSSデータ（/fix）を入力とし、その品質（主に協方差行列、
-必要ならFIX/FLOAT状態なども加味）を評価し、「信頼できるデータのみ」をEKFへ送る、
-あるいは「品質情報を重みとして」EKFへ送るアルゴリズムを提案する（閾値処理や信頼度スケーリングなど）。
-このモジュールが新規性の中核であることを強調する。
+\subsection{TF構成}
+本システムではTFを次のように固定する．
+\begin{itemize}
+  \item FAST-LIO：\texttt{odom} $\rightarrow$ \texttt{base\_link}（高頻度相対オドメトリ）
+  \item RTAB-Map：\texttt{map} $\rightarrow$ \texttt{odom}（後端最適化により更新される全局整合変換）
+  \item 静的外部パラメータ：\texttt{base\_link} $\rightarrow$ \texttt{lidar}，\texttt{base\_link} $\rightarrow$ \texttt{gps\_antenna}
+\end{itemize}
+これにより，制御系は\texttt{odom}系の連続性を維持しつつ，後端は\texttt{map}系で全局整合を提供できる．
 
-\subsection{EKFによる状態推定} 
-Robot localization を用い、LIO (Wheel Odom) を
-高頻度の主要な運動推定源とし、品質監視モジュールを経由した
-GNSSデータを低頻度の絶対位置補正源として融合する設定を説明する。
+\subsection{データフロー}
+\begin{itemize}
+  \item FAST-LIO：点群＋IMU $\rightarrow$ $\,^{\texttt{odom}}\!T_{\texttt{base}}(t)$
+  \item GNSS Supervisor：GNSS（\texttt{NavSatFix}＋受信機状態量）＋LIOオドメトリ $\rightarrow$ \texttt{GNSS\_gated}（採否・降重済みGNSS）
+  \item RTAB-Map：センサ入力＋LIOオドメトリ＋\texttt{GNSS\_gated} $\rightarrow$ グラフ最適化／ループ閉合 $\rightarrow$ \texttt{map}$\rightarrow$\texttt{odom}，最適化軌跡
+  \item 生態環境マッピング：最適化軌跡に基づき環境センサ値を\texttt{map}座標系へ投影
+\end{itemize}
 
-\section{期待される効果}
-GNSS信号が良いときはその精度を活用し、悪いときはLIOによってドリフトを抑制し、
-全体として精度と頑健性を両立できることを論理的に説明する。
+\section{GNSS Supervisorの設計：可用性ゲート＋完全性ゲート＋LIO信頼度}
+\label{sec:supervisor}
+Supervisorは，可用性判別，完全性監視，LIO信頼度から構成される．可用性ゲートは利用不可を遮断し，
+完全性ゲートはHMI／外れ値混入を抑制する．ただしLIOも退化し得るため，
+LIO信頼度に基づき完全性ゲートの厳しさを調整し，
+必要に応じて完全性ゲートを停止して可用性判別のみへ切り替える．
+
+\subsection{可用性ゲート}
+\label{subsec:availability_gate}
+可用性ゲートは，LIO等の外部推定に依存せず，
+受信機自身が提供する状態量に基づく入力有効性検査として実装する．
+目的は，測位不可や補正途絶に起因する利用不可を確実に遮断し，
+後端グラフへ不正な拘束が注入されることを防ぐことである．
+
+\subsubsection{状態量}
+受信機から次の状態量を取得・記録し，判別に用いる．
+\begin{itemize}
+  \item 測位状態（no-fix，3D-fix，RTK-float，RTK-fix等）
+  \item 使用衛星数（あるいは測位に寄与する衛星数）
+  \item 搬送波解の状態
+  \item 差分補正の受信状態（RTCM age，途絶時間）
+  \item 位置推定共分散（NavSatFixに付随するposition\_covariance）
+\end{itemize}
+NavSatFixのみで不足する場合は，
+受信機拡張ステータス（UBX等）を併記してログ化する．
+
+\subsubsection{4状態モデルとヒステリシス}
+GNSS入力の状態をS0--S3に分類する．
+\begin{itemize}
+  \item \textbf{S0：NO\_MEAS（利用不可）}\\
+  no-fix，衛星数不足，RTCM age超過，共分散が未定義（NaN）等．
+  \item \textbf{S1：DEGRADED（降級可用）}\\
+  RTK-float／3D-fix等で測位は成立するが精度が劣化している状態．
+  \item \textbf{S2：CANDIDATE（回復直後の観察状態）}\\
+  S0から回復した直後であり，安定性を確認するための遷移状態．
+  \item \textbf{S3：TRUSTED（可用）}\\
+  RTK-fixが安定し，状態量が良好である状態（完全性ゲート通過を前提に最終採用）．
+\end{itemize}
+
+判定の過敏さを避けるため，ヒステリシスを導入する．例えば，
+\begin{itemize}
+  \item 利用不可条件が連続$N_{\mathrm{bad}}$回成立 $\Rightarrow$ S0へ遷移し，GNSSを封鎖
+  \item 利用可能条件が連続$M_{\mathrm{good}}$回成立 $\Rightarrow$ S2へ遷移し，観察後にS3候補
+\end{itemize}
+とする．
+
+\subsection{完全性ゲート（Integrity Gate）：短時間増分整合性検定}
+\label{subsec:integrity_gate}
+完全性ゲートは，受信機状態が良好に見えるにもかかわらず外れ値を含むHMIを抑制するための機構である．本研究では，絶対座標の一致を仮定せず，\textbf{短時間窓の位置増分}を比較することで外れ値混入を検出する．増分形式を採用することで，初期方位や座標原点の差異に対して頑健となる．
+
+\subsubsection{GNSSの局所座標化}
+完全性検定は局所直交座標系（ENU）で実施する．$t$時刻のGNSS測位を$\,^{\texttt{enu}}\bm{p}_{\mathrm{gnss}}(t)$とし，基準点（原点）は可用状態S3が成立した初回の測位（あるいは観察状態S2を経て安定と判断した測位）を用いて設定する．局所座標化の実装は\ref{sec:enu_conversion}節に述べる．
+
+\subsubsection{増分残差とNIS}
+時間窓$\Delta T$に対して，LIOおよびGNSSの位置増分を次式で定義する．
+\begin{align}
+  \Delta \bm{p}_{\mathrm{lio}}(t)  &= \bm{p}_{\mathrm{lio}}(t)-\bm{p}_{\mathrm{lio}}(t-\Delta T), \\
+  \Delta \bm{p}_{\mathrm{gnss}}(t) &= \bm{p}_{\mathrm{gnss}}(t)-\bm{p}_{\mathrm{gnss}}(t-\Delta T).
+\end{align}
+ここで$\bm{p}_{\mathrm{gnss}}(t)$はENU座標のGNSS位置，$\bm{p}_{\mathrm{lio}}(t)$はLIOオドメトリを同一座標系で表現した位置（\texttt{odom}系）である．増分残差を
+\begin{equation}
+  \bm{r}(t)=\Delta \bm{p}_{\mathrm{gnss}}(t)-\Delta \bm{p}_{\mathrm{lio}}(t)
+\end{equation}
+とし，共分散を
+\begin{equation}
+  \bm{S}(t)=\Sigma_{\mathrm{gnss}}(t)+\Sigma_{\mathrm{lio}}(t)
+\end{equation}
+で近似する．正規化イノベーション二乗（NIS）を
+\begin{equation}
+  d(t)=\bm{r}(t)^{\mathsf{T}}\bm{S}(t)^{-1}\bm{r}(t)
+\end{equation}
+として計算し，$d(t)>\gamma$のとき外れ値疑いと判定する．$\gamma$は自由度3の$\chi^2$分布に基づいて設定し，$\Delta T$は0.5--1.5\,sの範囲で実測により調整する（本研究では初期値として$\Delta T=1.0$\,sを用いる）．
+
+\subsubsection{down-weight優先の抑制とヒステリシス}
+本システムでは，GNSSが大部分の時間帯で有効であるため，誤報（False Alarm）による過剰封鎖は絶対拘束の喪失を招く．そこで，判定結果の反映は\textbf{down-weight（寄与抑制）を優先}し，明確な外れ値と判断した場合のみdropする．
+
+具体的には，外れ値疑いの程度に応じてスケール$\alpha(t)\ge 1$を設定し，
+\begin{equation}
+  \Sigma_{\mathrm{gnss}}'(t)=\alpha(t)\,\Sigma_{\mathrm{gnss}}(t)
+\end{equation}
+として後端へ入力する．$\alpha(t)$は段階設定（例：$1,\,10,\,100$）とし，再現性を確保する．またヒステリシスとして，
+\begin{itemize}
+  \item 不合格が連続$N_{\mathrm{bad}}$回 $\Rightarrow$ 封鎖（dropもしくは強いdown-weight）
+  \item 合格が連続$M_{\mathrm{good}}$回 $\Rightarrow$ 解封（通常入力へ復帰）
+\end{itemize}
+を適用する．
+
+\subsection{LIO信頼度（LIO Confidence）による退化保護}
+\label{subsec:lio_confidence}
+長廊等でLIOが退化している局面では，LIOを参照として完全性検定を行うと誤判定が増加し得る．そこでLIO信頼度$C_{\mathrm{lio}}\in[0,1]$を導入し，完全性ゲートの厳しさを調整する．
+
+\subsubsection{信頼度指標（オンラインproxy）}
+実装容易性と再現性を重視し，$C_{\mathrm{lio}}$は次のいずれか（または組合せ）で定義する．
+\begin{itemize}
+  \item \textbf{内部統計に基づく指標（取得可能な場合）}：有効特徴点数，残差統計，反復回数，推定共分散の増大など．
+  \item \textbf{点群幾何に基づく退化proxy（内部量が取得困難な場合）}：最近傍$K$フレーム点群に対してPCAを行い，固有値$\lambda_1\ge\lambda_2\ge\lambda_3$の比（例：$\rho=\lambda_3/\lambda_1$）を退化指標とする．$\rho$が小さい場合，強い一次元性を示し長廊退化を疑う．
+\end{itemize}
+
+\subsubsection{信頼度に基づく調整規則}
+$C_{\mathrm{lio}}$が低い場合は，次のいずれかで完全性ゲートを緩和する．
+\begin{enumerate}
+  \item $\Sigma_{\mathrm{lio}}$の拡大：$C_{\mathrm{lio}}$低下に応じて$\Sigma_{\mathrm{lio}}$を拡大し，NISが過敏に反応することを防ぐ．
+  \item 閾値$\gamma$の緩和：$C_{\mathrm{lio}}$低下に応じて$\gamma$を増大させる．
+  \item 完全性ゲートの一時停止：$C_{\mathrm{lio}}<\tau_C$のとき，完全性ゲートを停止し，可用性ゲートのみによる入力管理へ切り替える．
+\end{enumerate}
+これにより，LIO退化局面で「誤った参照に基づいてGNSSを恒常的に否定する」状況を回避する．
+
+\section{WGS84から局所ENUへの変換}
+\label{sec:enu_conversion}
+Supervisor内部の整合性検定では，GNSSを局所直交座標へ変換する必要がある．出力はRTAB-Mapへ\texttt{NavSatFix}として与えるため，\textbf{変換はSupervisor内部のみに閉じる}．
+
+\subsection{GeographicLibによるWGS84$\rightarrow$ENU（推奨）}
+可用状態S3が初めて成立した時刻の測位$(\varphi_0,\lambda_0,h_0)$を原点として設定し，各時刻の測位$(\varphi,\lambda,h)$をENUへ変換して$\,^{\texttt{enu}}\bm{p}_{\mathrm{gnss}}(t)$を得る．この方式は構成が単純であり，姿勢入力を必要としないため，実装・検証が容易である．
+
+\subsection{navsat\_transform\_nodeの利用（代替）}
+ROS標準ノードを用いて\texttt{NavSatFix}をローカル座標へ変換する方法もある．ただし方位入力（IMUあるいはLIO由来yaw）と座標系整合の要件が増えるため，本研究では原則としてGeographicLib方式を採用する．
+
+\section{RTAB-MapへのGNSS拘束注入と三値出力（Pass／Inflate／Drop）}
+\label{sec:rtabmap_injection}
+GNSSは後端グラフ最適化における\textbf{疎な全局拘束}として扱う．Supervisorの出力は，RTAB-Mapへ入力するGNSS拘束の取り扱いを三値で決定する．
+\begin{itemize}
+  \item \textbf{Pass}：\texttt{NavSatFix}をそのまま出力し，RTAB-Mapが通常重みで拘束として利用する．
+  \item \textbf{Inflate}：\texttt{position\_covariance}を$\alpha(t)$倍に拡大して出力し，拘束の重みを弱める（ソフト抑制）．
+  \item \textbf{Drop}：当該時刻のGNSSを出力しない（またはRTAB-Mapが無視できるフラグを付与する）ことで拘束注入を行わない（ハード抑制）．
+\end{itemize}
+これにより，利用不可・外れ値混入のGNSSが後端地図を汚染することを防止しつつ，大部分の高品質RTK拘束を最大限活用できる．
 
 \end{document}
