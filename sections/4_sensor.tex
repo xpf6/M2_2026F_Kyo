@@ -1,16 +1,12 @@
 %! TEX root = ../main.tex
 \documentclass[main]{subfiles}
 
-
 \begin{document}
-\chapter{高速・高信頼センシングシステムの構築}
+\chapter{高速分光センシングシステムの構築}
 この章で、ハードウェア/組み込み技術の高さを明確に示す
-\section{システム全体の概要}
-AGVプラットフォーム（GS02ベース）、搭載センサ群（Mid360, IMU, ZED-F9P, VESC, 生態センサユニット）、ソフトウェア（ROS 2）からなる全体構成を示す（ブロック図）。
 
-TFツリーを示し、特にLiDARの傾斜搭載について言及する。
 
-\section{センサユニットの開発}
+\section{センサユニットのハードウェア構成}
 本研究で構築するセンサユニットは，植生状態の観察を目的とし，
 浜松ホトニクス製ミニ分光器 C12880MA を搭載する．生育環境の評価のため，
 Bosch Sensortec 製 BME280（秋月電子通商製ブレークアウト基板 AE-BME280）および 
@@ -21,7 +17,7 @@ STMicroelectronics製マイクロコントローラ（MCU）を使用し，セ�
 （Fig.~\ref{fig:mcu_circuit}，Fig.~\ref{fig:c12880ma_circuit}，
 Fig.~\ref{fig:s300l_circuit}，Fig.~\ref{fig:bme280_circuit}）．
 
-\subsection{高速分光センサ駆動モジュールの開発における従来の課題} 
+\section{分光センサ駆動モジュールの開発における従来の課題} 
 C12880MAセンサは，
 入力ST信号立下り後，TRG信号を出力し，
 第89番目のTRG（トリガ）信号立上りでVideo信号を出力する．
@@ -77,14 +73,14 @@ LPC1768 MCUと外部ADコンバータ（SPI接続）を用い，この方式でC
 
 
 
-\subsection{提案手法：デュアルスイッチFSMアーキテクチャ}
+\section{提案手法：デュアルスイッチFSMアーキテクチャ}
 \label{sec:new_architecture}
 割り込み遅延を排除するため，タイマ・ADC・DMAをハードウェアトリガで直結する
 アーキテクチャ（Timer$\rightarrow$TRGO$\rightarrow$ADC$\rightarrow$DMA）は必須である．
 しかし，この構成にはC12880MA特有の「競合状態（Race Condition）」
 の問題が存在する．
 
-\subsubsection{C12880MA駆動における「フライングスタート」問題} 
+\subsection{C12880MA駆動における「フライングスタート」問題} 
 C12880MAのTRG信号は，CLK（クロック）信号のミラであり，
 CLKが供給されている限りTRGも常時出力され続ける．
 一方，我々の制御フローは「(1) ST=HIGHで積分 $\rightarrow$ (2) ST=LOWでADC読出開始」である．
@@ -95,7 +91,7 @@ ADCを即座に誤トリガしてしまう．
 書き込まれてしまい，正しいスペクトルデータを取得できない．
 
 
-\subsubsection{FSM（有限状態機械，以下，FSM）の設計}
+\subsection{FSM（有限状態機械，以下，FSM）の設計}
 この問題を根本的に解決するため，ソフトウェアのタイミング制御に依存せず，
 2つの独立したハードウェア「スイッチ」によってデータフローを
 厳密に制御するFSMを設計した．
@@ -121,7 +117,7 @@ ADCを即座に誤トリガしてしまう．
     TRGO出力が許可され，TRG信号がADCに到達可能となる．
 \end{itemize}
 
-\subsubsection{FSM（有限状態機械）による制御フロー}
+\subsection{FSM（有限状態機械）による制御フロー}
 この「デュアルスイッチ」設計に基づき，極めて堅牢なFSM制御フローを実装した．
 主要な状態遷移は以下の通りである．
 
@@ -161,7 +157,10 @@ C12880MAの「フライングスタート」問題をハードウェアレベル
 このアーキテクチャが次節で述べる
 高速データ取得の基盤である．
 
-\subsubsection{STM32F446REでのアーキテクチャ検証}
+
+\section{性能検証}
+展示波形图或数据，证明达到了5MHz采样率
+\subsection{STM32F446REでのアーキテクチャ検証}
 従来手法では\SI{130}{\kilo\hertz}が限界であったSTM32F446REに
 新アーキテクチャを実装したところ，\SI{0.5}{\mega\hertz}および\SI{1}{\mega\hertz}での
 安定したデータ取得に成功した．
@@ -170,14 +169,14 @@ C12880MAの「フライングスタート」問題をハードウェアレベル
 なお，本MCUに搭載されるADCの性能から，達成可能な最大周波数は
 理論上およそ\textbf{\SI{1.5}{\mega\hertz}}である．
 
-\subsubsection{STM32H723ZGでの\SI{5}{\mega\hertz}高速取得の実現}
+\subsection{STM32H723ZGでの\SI{5}{\mega\hertz}高速取得の実現}
 次に，最大\SI{5}{\MSPS}のADCを搭載するSTM32H723ZGに同アーキテクチャを実装した．
 H7シリーズ特有のキャッシュ・コヒーレンシ問題に対処するため，
 DMAの転送先バッファを非キャッシュのDTCM（Data Tightly Coupled Memory）領域に配置し，
 さらにADCのハードウェアキャリブレーションとトリガ遅延設定を最適化した．
 その結果，目標としていた\SI{5}{\mega\hertz}でのスペクトルデータ連続取得に成功した．
 
-\subsubsection{ADC性能とサンプリングレートの検証}
+\subsection{ADC性能とサンプリングレートの検証}
 本システムが目標とする\SI{5}{\mega\hertz}のデータレートを達成可能であることを，
 MCUのADC性能とセンサのタイミング制約から検証する．
 
@@ -254,3 +253,6 @@ ADCのカーネルクロックを\SI{96}{\mega\hertz}に設定した．
 BME280, S300L, GNSS, IMU, Wheel Odometryのデータ取得方法について簡潔に述べる。
 
 \end{document}
+
+
+

@@ -3,10 +3,41 @@
 
 \begin{document}
 
-\chapter{提案手法：GNSS品質監視に基づくLIO--Graph SLAM統合自己位置推定}
+\chapter{GNSS品質監視に基づくロバストな自己位置推定}
 \label{ch:method}
+農業用ハウス環境におけるRTK-GNSSは，
 
-\section{問題設定と故障モード}
+\section{実験システム概要}
+AGVプラットフォーム（GS02ベース）、搭載センサ群（Mid360, IMU, ZED-F9P, VESC, 生態センサユニット）、ソフトウェア（ROS 2）からなる全体構成を示す（ブロック図）。
+
+TFツリーを示し、特にLiDARの傾斜搭載について言及する。
+
+\subsection{移動ロボットプラットフォーム}
+\subsection{ソフトウェア構成}
+\label{sec:system_overview}
+本研究では，前端にFAST-LIOを用いて高頻度な相対オドメトリを生成し，
+後端にRTAB-Mapを用いてループ閉合とグラフ最適化を行う．
+GNSSはRTAB-Mapの拘束入力として用い，robot\_localizationは使用しない．
+
+\subsubsection{TF構成}
+本システムではTFを次のように固定する．
+\begin{itemize}
+  \item FAST-LIO：\texttt{odom} $\rightarrow$ \texttt{base\_link}（高頻度相対オドメトリ）
+  \item RTAB-Map：\texttt{map} $\rightarrow$ \texttt{odom}（後端最適化により更新される全局整合変換）
+  \item 静的外部パラメータ：\texttt{base\_link} $\rightarrow$ \texttt{lidar}，\texttt{base\_link} $\rightarrow$ \texttt{gps\_antenna}
+\end{itemize}
+これにより，制御系は\texttt{odom}系の連続性を維持しつつ，後端は\texttt{map}系で全局整合を提供できる．
+
+\subsubsection{データフロー}
+\begin{itemize}
+  \item FAST-LIO：点群＋IMU $\rightarrow$ $\,^{\texttt{odom}}\!T_{\texttt{base}}(t)$
+  \item GNSS Supervisor：GNSS（\texttt{NavSatFix}＋受信機状態量）＋LIOオドメトリ $\rightarrow$ \texttt{GNSS\_gated}（採否・降重済みGNSS）
+  \item RTAB-Map：センサ入力＋LIOオドメトリ＋\texttt{GNSS\_gated} $\rightarrow$ グラフ最適化／ループ閉合 $\rightarrow$ \texttt{map}$\rightarrow$\texttt{odom}，最適化軌跡
+  \item 生態環境マッピング：最適化軌跡に基づき環境センサ値を\texttt{map}座標系へ投影
+\end{itemize}
+
+
+\section{農業環境における課題と故障モード}
 \label{sec:problem_definition}
 農業用ハウス環境におけるRTK-GNSSは，多くの時間帯で高精度に利用可能である一方，
 遮蔽・マルチパス・差分補正の途絶等により，測位品質が間欠的に劣化する．
@@ -31,30 +62,8 @@
 高品質RTK拘束によりLIOの長期ドリフトを抑制する統合推定系を構築することである．
 そのために，後端へ注入するGNSS拘束をオンラインで選別する品質監視モジュールを設計する．
 
-\section{全体システム構成（FAST-LIOフロントエンド＋RTAB-Mapバックエンド）}
-\label{sec:system_overview}
-本研究では，前端にFAST-LIOを用いて高頻度な相対オドメトリを生成し，
-後端にRTAB-Mapを用いてループ閉合とグラフ最適化を行う．
-GNSSはRTAB-Mapの拘束入力として用い，robot\_localizationは使用しない．
 
-\subsection{TF構成}
-本システムではTFを次のように固定する．
-\begin{itemize}
-  \item FAST-LIO：\texttt{odom} $\rightarrow$ \texttt{base\_link}（高頻度相対オドメトリ）
-  \item RTAB-Map：\texttt{map} $\rightarrow$ \texttt{odom}（後端最適化により更新される全局整合変換）
-  \item 静的外部パラメータ：\texttt{base\_link} $\rightarrow$ \texttt{lidar}，\texttt{base\_link} $\rightarrow$ \texttt{gps\_antenna}
-\end{itemize}
-これにより，制御系は\texttt{odom}系の連続性を維持しつつ，後端は\texttt{map}系で全局整合を提供できる．
-
-\subsection{データフロー}
-\begin{itemize}
-  \item FAST-LIO：点群＋IMU $\rightarrow$ $\,^{\texttt{odom}}\!T_{\texttt{base}}(t)$
-  \item GNSS Supervisor：GNSS（\texttt{NavSatFix}＋受信機状態量）＋LIOオドメトリ $\rightarrow$ \texttt{GNSS\_gated}（採否・降重済みGNSS）
-  \item RTAB-Map：センサ入力＋LIOオドメトリ＋\texttt{GNSS\_gated} $\rightarrow$ グラフ最適化／ループ閉合 $\rightarrow$ \texttt{map}$\rightarrow$\texttt{odom}，最適化軌跡
-  \item 生態環境マッピング：最適化軌跡に基づき環境センサ値を\texttt{map}座標系へ投影
-\end{itemize}
-
-\section{GNSS Supervisorの設計：可用性ゲート＋完全性ゲート＋LIO信頼度}
+\section{提案手法：GNSS Supervisorの設計}
 \label{sec:supervisor}
 Supervisorは，可用性判別，完全性監視，LIO信頼度から構成される．可用性ゲートは利用不可を遮断し，
 完全性ゲートはHMI／外れ値混入を抑制する．ただしLIOも退化し得るため，
@@ -180,5 +189,33 @@ GNSSは後端グラフ最適化における\textbf{疎な全局拘束}として�
   \item \textbf{Drop}：当該時刻のGNSSを出力しない（またはRTAB-Mapが無視できるフラグを付与する）ことで拘束注入を行わない（ハード抑制）．
 \end{itemize}
 これにより，利用不可・外れ値混入のGNSSが後端地図を汚染することを防止しつつ，大部分の高品質RTK拘束を最大限活用できる．
+
+
+\section{実験と評価}
+実験フィールド（信州大学農場ハウス）、使用したAGV、データ収集シナリオ
+（GNSS良好時、不良時、ハウス内外移動時）を詳細に記述する。
+
+評価に用いたGround Truthの定義（例：GNSS良好時の高精度軌跡、あるいは外部計測機器）を明確にする。
+\subsection{実験条件}
+\subsection{比較手法}
+比較手法: (1) LIO (+Wheel Odom) のみ、(2) LIO+Wheel+GNSSのナイーブな融合（品質無視）、(3) 提案手法（品質監視付き融合）の3つを用意する。
+
+各シナリオのデータセットに対して3手法を適用し、得られた軌跡をGround Truthと比較する。
+
+結果の提示: (1) 軌跡比較図（Fig. 
+%\ref{fig:trajectory_comparison}
+）、
+(2) 定量評価指標（RMSE, 最大誤差など）の比較表（Table 
+%\ref{tab:localization_rmse}
+）を示す。
+\subsection{結果と考察}
+実験結果に基づき、
+提案手法(3)が比較手法(1)(2)に対して優位性を持つことを明確に論証する。
+特に、GNSS品質が悪化した際に、ナイーブ融合(2)が破綻するのに対し、提案手法(3)が安定して精度を維持できることを強調する。
+
+GNSS品質監視モジュールの閾値設定などのパラメータの妥当性についても議論する
+
+\end{document}
+
 
 \end{document}
