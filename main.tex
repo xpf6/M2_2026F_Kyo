@@ -8,6 +8,14 @@
 \usepackage{minted}     % For code highlighting
 \usepackage{algorithm}  % For Algorithm floats
 \usepackage{algpseudocode} % For algorithmic pseudocode environment
+%\usepackage{algorithmic}
+\usepackage{tabularx}
+\usepackage{placeins} % 提供 \FloatBarrier
+\usepackage{array}
+\usepackage{booktabs}
+
+% \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+% \newcolumntype{Y}{>{\raggedright\arraybackslash}X} % X列改成左对齐，避免奇怪伸展
 
 \DeclareSIUnit{\MSPS}{MSPS}
 
@@ -33,7 +41,7 @@
 \subfile{sections/3_gnss.tex}
 \clearpage
 
-\subfile{sections/4_sensor.tex}
+\subfile{sections/4_sensor1.tex}
 \clearpage
 
 \subfile{sections/5_ecological_mapping.tex}

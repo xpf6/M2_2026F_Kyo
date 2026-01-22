@@ -7,25 +7,23 @@
 \label{ch:sensor_unit}
 本章では，農業ロボットによる植生状態観察を目的として構築した
 高速分光センシングシステムについて述べる．
-対象とする農業環境では，走行しながら連続的に計測を行うため，
+対象とする農業環境（信州大学繊維学部の圃場）では，走行しながら連続的に計測を行うため，
 分光データの取得は高い時間分解能と安定性が要求される．
-一方，浜松ホトニクス製ミニ分光器C12880MAは，出力タイミングが外部クロックに強く依存し，
-一般的な割込み駆動方式では高周波領域において取得欠落やタイミングずれが生じやすい．
-そこで本研究では，タイマ，ADC，DMAをハードウェアトリガで直結し，
-さらにC12880MA固有の競合状態を回避するためのデュアルスイッチFSMアーキテクチャを設計・実装した．
-加えて，STM32F4シリーズおよびSTM32H7シリーズに実装して性能を比較し，
-最終的に\SI{5}{\mega\hertz}での安定取得を実現したことを，
-波形観測，連続取得試験，およびスペクトル再現性評価により検証する．
+一方，浜松ホトニクス製ミニ分光器C12880MAは，外部クロックに同期して出力が更新されるため，
+割込み駆動に基づく一般的な取得方式では高周波領域で取得欠落やタイミングずれが生じやすい．
+そこで本研究では，C12880MAの高周波駆動における割込み駆動方式の限界を再現的に示した上で，
+タイマ・ADC・DMAをハードウェアトリガで連鎖させ，さらにC12880MA固有の競合状態を回避する
+デュアルスイッチFSMアーキテクチャを設計・実装した．
+提案手法はSTM32F446RE（F4シリーズ）およびSTM32H723ZG（H7シリーズ）に実装し，
+最終的に\SI{5}{\mega\hertz}での連続取得を実証した．
 
-\section{センサユニットのハードウェア構成}
-\label{sec:sensor_unit_hw}
-本研究で構築したセンサユニットは，植生状態の観察を目的とし，
-浜松ホトニクス製ミニ分光器C12880MAを中核センサとして搭載する．
-また生育環境の基礎量を同時計測するため，
-Bosch Sensortec製BME280（秋月電子通商製ブレークアウト基板AE-BME280）および
-ELT SENSOR製S300L-3V \(\mathrm{CO_2}\)センサを統合した．
-センサデータの収集および同期制御にはSTMicroelectronics製マイクロコントローラ（以下，MCU）を用いる．
-センサユニットの全体構成をFig.~\ref{fig:agv_multisensor_overall}に示す．
+\section{本章で用いるセンサユニットの概要}
+\label{sec:sensor_unit_overview}
+本研究で用いるセンサユニットは，植生状態観察のための分光計測を中核に，
+生育環境の基礎量（温度・湿度・気圧，\(\mathrm{CO_2}\)濃度）を同時取得できるよう構成した．
+ユニット全体の構成をFig.~\ref{fig:agv_multisensor_overall}に示す．
+なお，環境量センサを含むユニットの基本構成および計測ロジックは先行研究で確立されており，
+本章ではC12880MAの高速取得に直接関与する要素に限って概要を述べる．
 各センサおよびMCUのインタフェース回路は付録に示す
 （Fig.~\ref{fig:mcu_circuit}，Fig.~\ref{fig:c12880ma_circuit}，
 Fig.~\ref{fig:s300l_circuit}，Fig.~\ref{fig:bme280_circuit}）．
@@ -33,56 +31,55 @@ Fig.~\ref{fig:s300l_circuit}，Fig.~\ref{fig:bme280_circuit}）．
 \subsection{構成要素と主仕様}
 \label{subsec:sensor_unit_specs}
 センサユニットの構成要素と主仕様をTable~\ref{tab:sensor_unit_specs}に示す．
-分光器C12880MAはラインセンサとして動作し，外部クロックに同期して出力が更新されるため，
-MCU側のトリガ生成およびサンプリングの厳密な同期が不可欠である．
-BME280およびS300L-3Vは比較的低速な環境量計測であり，
-分光データと同一の時刻系で統合することで，走行中のマルチモーダル計測を可能とする．
-センサユニットの外観および搭載配置の写真を
-Fig.~\ref{fig:sensor_unit_photo}に示す．
+C12880MAは外部クロックに同期してVIDEO信号が更新されるラインセンサであり，
+MCU側ではトリガ生成とサンプリングタイミングの厳密な同期が必要となる．
+BME280およびS300L-3Vは比較的低速な環境量計測であるが，分光フレームと同一の時刻系で統合することで，
+走行中のマルチモーダル計測を可能とする．
+センサユニットの外観および搭載配置の写真はFig.~\ref{fig:sensor_unit_photo}に示す．
 
-% \begin{table}[!tbp]
-%   \centering
-%   \caption{Sensor unit components and key specifications}
-%   \label{tab:sensor_unit_specs}
-%   \setlength{\tabcolsep}{5pt}
-%   \renewcommand{\arraystretch}{1.15}
-%   \begin{tabularx}{\linewidth}{L{0.30\linewidth} L{0.22\linewidth} L{0.20\linewidth} Y}
-%     \toprule
-%     Component & Manufacturer & Interface & Note \\
-%     \midrule
-%     Mini-spectrometer C12880MA
-%       & Hamamatsu Photonics
-%       & Analog (VIDEO), CLK/ST/TRG
-%       & High-speed synchronized acquisition \cite{ref:C12880MA} \\
-%     BME280 (AE-BME280)
-%       & Bosch Sensortec / Akizuki Denshi
-%       & I\(^2\)C
-%       & Temperature / humidity / pressure \\
-%     S300L-3V \(\mathrm{CO_2}\) sensor
-%       & ELT SENSOR
-%       & UART (or Analog)
-%       & \(\mathrm{CO_2}\) concentration \\
-%     MCU
-%       & STMicroelectronics
-%       & ---
-%       & Timer / ADC / DMA based control \\
-%     \bottomrule
-%   \end{tabularx}
-% \end{table}
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/4/AGV_Multisensor.pdf}
+  \caption{Overall multisensor system architecture}
+  \label{fig:agv_multisensor_overall}
+\end{figure}
 
-% \begin{figure}[t]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/4/placeholder_sensor_unit_photo.png}
-%   \caption{Sensor unit overview (photo placeholder)}
-%   \label{fig:sensor_unit_photo}
-% \end{figure}
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.9\linewidth]{figures/4/placeholder_sensor_unit_photo.pdf}
+  \caption{Photographs of the sensor unit. (A) Top view of the single-layer sensor board integrating the C12880MA mini-spectrometer, BME280, and S300L-3V. (B) Oblique view of the assembled board. (C) Top view with the optical bandpass filter holder mounted, where the C12880MA is located beneath the filter. (D) Oblique view of the fully assembled unit.}
+  \label{fig:sensor_unit_photo}
+\end{figure}
 
-% \begin{figure}[t]
-%   \centering
-%   \includegraphics[width=\linewidth]{figures/2/AGV_Multisensor.pdf}
-%   \caption{Overall multisensor system architecture}
-%   \label{fig:agv_multisensor_overall}
-% \end{figure}
+\begin{table}[t]
+  \centering
+  \caption{Sensor unit components and key specifications (overview)}
+  \label{tab:sensor_unit_specs}
+  \setlength{\tabcolsep}{4pt}
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{p{0.32\linewidth} p{0.22\linewidth} p{0.18\linewidth} p{0.22\linewidth}}
+    \hline
+    Component & Manufacturer & Interface & Note \\
+    \hline \hline
+    Mini-spectrometer C12880MA
+      & Hamamatsu Photonics
+      & Analog (VIDEO), CLK/ST/TRG
+      & High-speed synchronized acquisition \cite{ref:C12880MA} \\
+    BME280 (AE-BME280)
+      & Bosch Sensortec / Akizuki Denshi
+      & I\(^2\)C
+      & Temperature / humidity / pressure \\
+    S300L-3V \(\mathrm{CO_2}\) sensor
+      & ELT SENSOR
+      & I\(^2\)C
+      & \(\mathrm{CO_2}\) concentration \\
+    MCU
+      & STMicroelectronics
+      & ---
+      & STM32F446RE (F4) / STM32H723ZG (H7) \\
+    \hline
+  \end{tabular}
+\end{table}
 
 \section{分光センサ駆動モジュールの開発における従来の課題}
 C12880MAセンサは，入力ST信号立下り後，TRG信号を出力し，
@@ -100,12 +97,26 @@ C12880MAセンサは，入力ST信号立下り後，TRG信号を出力し，
 ソフトウェア介在による起動遅延が無視できなくなる．
 このため，センサの性能を引き出すには，ソフトウェア割込みに依存しないハードウェア同期機構が必要となる．
 
-% \begin{figure}[t]
-%   \centering
-%   \includegraphics[width=0.9\linewidth]{figures/2/placeholder_C12880MA_timing.png}
-%   \caption{Timing diagram of the C12880MA: excerpted from the datasheet\cite{ref:C12880MA}}
-%   \label{fig:c12880ma_timing}
-% \end{figure}
+\begin{table}[t]
+    \centering
+    \caption{Limits of acquisition frequency with conventional methods}
+    \label{tab:previous_method_limit}
+    \begin{tabular}{l|l|c}
+        \hline
+        \textbf{Method} & \textbf{MCU} & \textbf{Achieved frequency} \\
+        \hline \hline
+        Interrupt only      & STM32F446RE & \SI{25.4}{\kilo\hertz}\\
+        Interrupt + DMA     & STM32F446RE & \SI{130}{\kilo\hertz} \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\linewidth]{figures/4/placeholder_C12880MA_timing.png}
+  \caption{Timing diagram of the C12880MA: excerpted from the datasheet\cite{ref:C12880MA}}
+  \label{fig:c12880ma_timing}
+\end{figure}
 
 \subsection{従来方式の再検証}
 \label{subsec:reconfirm_limit}
@@ -114,20 +125,6 @@ C12880MAセンサは，入力ST信号立下り後，TRG信号を出力し，
 割込みのみでは\SI{25.4}{\kilo\hertz}付近で欠落が発生し，
 DMAを併用してCPU負荷を低減した場合でも\SI{130}{\kilo\hertz}程度が限界であった．
 以上より，従来方式の主要な性能制約が割込み起動遅延およびISR処理時間に起因することを確認した．
-
-% \begin{table}[t]
-%   \centering
-%   \caption{Limits of acquisition frequency with conventional methods}
-%   \label{tab:previous_method_limit}
-%   \begin{tabular}{l|l|c}
-%     \hline
-%     Method & MCU & Achieved frequency \\
-%     \hline \hline
-%     Interrupt only  & STM32F446RE & \SI{25.4}{\kilo\hertz} \\
-%     Interrupt + DMA & STM32F446RE & \SI{130}{\kilo\hertz} \\
-%     \hline
-%   \end{tabular}
-% \end{table}
 
 \section{提案手法：デュアルスイッチFSMアーキテクチャ}
 \label{sec:new_architecture}
@@ -181,24 +178,24 @@ ST=LOW（読出期間）に遷移するとブレーキが解除され，TRGOが�
 %   \label{fig:fsm_state_diagram}
 % \end{figure}
 
-% \begin{algorithm}[t]
-% \caption{C12880MA frame acquisition using a dual-switch FSM}
-% \label{alg:dual_switch_fsm}
-% \begin{algorithmic}[1]
-% \State \textbf{State} $\gets$ \textsc{Idle}
-% \State ST $\gets$ LOW; CLK(PWM) $\gets$ OFF; ADC $\gets$ STOP
-% \State \textbf{State} $\gets$ \textsc{Arm}
-% \State Start ADC with DMA (armed, waiting for trigger)
-% \State \textbf{State} $\gets$ \textsc{Integration}
-% \State Set ST $\gets$ HIGH (BKIN asserted; TRGO gated)
-% \State Start CLK(PWM) $\gets$ ON
-% \State Wait for integration time $T_{\mathrm{int}}$
-% \State \textbf{State} $\gets$ \textsc{Readout}
-% \State Set ST $\gets$ LOW (BKIN released; TRGO enabled)
-% \State ADC sampling is triggered by the next TRG edge; DMA transfers samples to buffer
-% \State \textbf{On DMA completion callback:} stop CLK(PWM); stop ADC; \textbf{State} $\gets$ \textsc{Idle}
-% \end{algorithmic}
-% \end{algorithm}
+\begin{algorithm}[t]
+\caption{C12880MA frame acquisition using a dual-switch FSM}
+\label{alg:dual_switch_fsm}
+\begin{algorithmic}[1]
+\State \textbf{State} $\gets$ \textsc{Idle}
+\State ST $\gets$ LOW; CLK(PWM) $\gets$ OFF; ADC $\gets$ STOP
+\State \textbf{State} $\gets$ \textsc{Arm}
+\State Start ADC with DMA (armed, waiting for trigger)
+\State \textbf{State} $\gets$ \textsc{Integration}
+\State Set ST $\gets$ HIGH (BKIN asserted; TRGO gated)
+\State Start CLK(PWM) $\gets$ ON
+\State Wait for integration time $T_{\mathrm{int}}$
+\State \textbf{State} $\gets$ \textsc{Readout}
+\State Set ST $\gets$ LOW (BKIN released; TRGO enabled)
+\State ADC sampling is triggered by the next TRG edge; DMA transfers samples to buffer
+\State \textbf{On DMA completion callback:} stop CLK(PWM); stop ADC; \textbf{State} $\gets$ \textsc{Idle}
+\end{algorithmic}
+\end{algorithm}
 
 \section{実装要点}
 \label{sec:implementation_points}
@@ -227,9 +224,17 @@ TRG，TRGO，VIDEOと同時観測することで，サンプリングタイミ�
 
 \section{性能検証}
 \label{sec:performance_eval}
-本節では，提案アーキテクチャが目標とする高速取得を実現していることを，
+本節では，提案アーキテクチャが高速取得を実現していることを，
 (i) 信号タイミングの実測，(ii) 連続取得時のデータ完全性，(iii) スペクトルの再現性，
 の3観点から検証する．
+評価に用いた実験セットアップの外観をFig.~\ref{fig:eval_setup_h723}に示す．
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/4/eval_setup_h723.pdf}
+  \caption{Experimental setup for high-speed spectral acquisition. An STM32 NUCLEO-H723ZG development board is connected to the sensor module with an optical bandpass filter via jumper wires for power and signal interfaces.}
+  \label{fig:eval_setup_h723}
+\end{figure}
 
 \subsection{STM32F446REでのアーキテクチャ検証}
 従来方式では\SI{130}{\kilo\hertz}が限界であったSTM32F446REに提案アーキテクチャを実装したところ，
@@ -239,7 +244,7 @@ TRG，TRGO，VIDEOと同時観測することで，サンプリングタイミ�
 なお，本MCUに搭載されるADCの仕様により，達成可能な最大周波数は理論上\SI{1.5}{\mega\hertz}程度に制限される
 （データシートに基づく上限）．
 
-\subsection{STM32H723ZGでの\SI{5}{\mega\hertz}高速取得}
+\subsection{STM32H723ZGでの\protect\SI{5}{\mega\hertz}高速取得}
 \label{subsec:eval_h7}
 最大\SI{5}{\mega\hertz}級のサンプリングを実現するため，STM32H723ZGに同アーキテクチャを実装した．
 前述のキャッシュ・コヒーレンシ対策としてDMAバッファをDTCMへ配置し，
@@ -254,19 +259,7 @@ ST=HIGHの積分期間ではBKINによりTRGOが遮断され，ST=LOWへ遷移�
 VIDEO信号の安定窓内でADCサンプリングが行われていることを確認する．
 これらにより，提案アーキテクチャが意図したハードウェア同期により動作していることを実証する．
 
-% \begin{figure}[t]
-%   \centering
-%   \includegraphics[width=0.95\linewidth]{figures/4/placeholder_scope_st_clk_trg_trgo.png}
-%   \caption{Oscilloscope waveforms of ST, CLK, TRG, and TRGO at \SI{5}{\mega\hertz} (placeholder)}
-%   \label{fig:scope_st_clk_trg_trgo}
-% \end{figure}
 
-% \begin{figure}[t]
-%   \centering
-%   \includegraphics[width=0.95\linewidth]{figures/4/placeholder_scope_trg_video_sampling_zoom.png}
-%   \caption{Zoomed waveform around TRG edge showing VIDEO stability window and sampling timing (placeholder)}
-%   \label{fig:scope_trg_video_sampling_zoom}
-% \end{figure}
 
 \subsection{連続取得試験によるデータ完全性評価}
 \label{subsec:data_integrity}
@@ -280,12 +273,7 @@ VIDEO信号の安定窓内でADCサンプリングが行われていることを
 評価結果の例をFig.~\ref{fig:loss_rate_vs_freq}に示す（図は実測値に差し替える）．
 本実装では\SI{5}{\mega\hertz}条件においても欠落が観測されないことを確認した．
 
-% \begin{figure}[t]
-%   \centering
-%   \includegraphics[width=0.90\linewidth]{figures/4/placeholder_loss_rate_vs_freq.pdf}
-%   \caption{Frame loss rate as a function of acquisition frequency (placeholder)}
-%   \label{fig:loss_rate_vs_freq}
-% \end{figure}
+
 
 \subsection{スペクトル再現性の検証}
 \label{subsec:spectrum_validity}
@@ -296,12 +284,6 @@ S/N比および外れ値混入の有無を評価した．
 代表例をFig.~\ref{fig:spectrum_repeatability}に示す（図は実測値に差し替える）．
 本結果より，高速取得においてもスペクトル形状の再現性が維持されることを確認した．
 
-% \begin{figure}[t]
-%   \centering
-%   \includegraphics[width=0.95\linewidth]{figures/4/placeholder_spectrum_repeatability.pdf}
-%   \caption{Spectral repeatability under a fixed illumination condition (mean and standard deviation; placeholder)}
-%   \label{fig:spectrum_repeatability}
-% \end{figure}
 
 \subsection{サンプリングレート成立性の検討（ADC仕様に基づく）}
 \label{subsec:adc_feasibility}
@@ -330,43 +312,34 @@ T_{\mathrm{period}} = \frac{1}{\SI{5}{\mega\hertz}} = \SI{200}{\nano\second}
 設定が理論上成立する．実測により本条件で安定動作することを確認した．
 
 
-% \begin{table}[!tbp]
-%   \centering
-%   \caption{Acquisition frequency of the proposed architecture}
-%   \label{tab:acq_freq_proposed}
-%   \setlength{\tabcolsep}{5pt}
-%   \renewcommand{\arraystretch}{1.15}
-%   \begin{tabular}{l l l}
-%     \toprule
-%     Method & MCU & Achieved frequency \\
-%     \midrule
-%     Proposed architecture & STM32F446RE & \SI{1.5}{\mega\hertz} (theory) \\
-%     Proposed architecture & STM32H723ZG & \SI{5.0}{\mega\hertz} (achieved) \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
+\begin{table}[!tbp]
+  \centering
+  \caption{Acquisition frequency of the proposed architecture}
+  \label{tab:acq_freq_proposed}
+  \setlength{\tabcolsep}{5pt}
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{l l l}
+    \toprule
+    Method & MCU & Achieved frequency \\
+    \midrule
+    Proposed architecture & STM32F446RE & \SI{1.5}{\mega\hertz} (theory) \\
+    Proposed architecture & STM32H723ZG & \SI{5.0}{\mega\hertz} (achieved) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 
 \section{その他センサのデータ取得と統合}
 \label{sec:other_sensors}
-本節では，分光データと同時に取得する環境センサについて，
-インタフェースおよび時刻付与の方針を簡潔に述べる．
-
-\subsection{BME280}
-\label{subsec:bme280}
-BME280はI\(^2\)C通信により温度・湿度・気圧を取得する．
-取得周期は環境変動の時間スケールに基づき数\si{\hertz}程度とし，
-MCUで時刻を付与して分光フレームと同一の時刻系でログ化する．
-
-\subsection{S300L-3V \(\mathrm{CO_2}\)センサ}
-\label{subsec:s300l}
-S300L-3VはUART通信（あるいはアナログ出力）により\(\mathrm{CO_2}\)濃度を取得する．
-分光データと同様にMCUで時刻付与し，走行時系列として統合する．
-
-\subsection{上位計算機への送信}
-\label{subsec:uplink}
-MCUで収集した分光フレームおよび環境センサ値は，上位計算機へ周期的に送信し記録する．
-通信方式，パケット構造，および誤り検出の詳細は，
-再現性確保の観点から付録にまとめる．
+分光データと同時に，生育環境の基礎量として温度・湿度・気圧および\(\mathrm{CO_2}\)濃度を取得するため，
+BME280およびS300L-3Vを併用した．これら環境センサの取得処理そのものは先行研究で確立された実装に基づくが，
+本研究ではセンサユニットのMCUをSTM32系列へ変更したことに伴い，
+デバイスドライバおよび周辺制御（I\(^2\)C/UART設定，割込み・DMA設定，タイマによる周期実行）を再設計し，
+既存処理をSTM32環境へポーティングした．具体的には，BME280はI\(^2\)C通信により所定周期で計測し，
+S300L-3VはUART通信により応答フレームを取得する．各計測値にはMCU内の単調増加タイムスタンプを付与し，
+分光フレームと同一の時刻系でログ化することで，走行中のマルチモーダル計測データとして統合可能とした．
+% 収集したデータは上位計算機へ周期的に送信し記録する．通信方式およびデータフォーマットの詳細は，
+% 再現性確保の観点から付録にまとめる．
 
 \section{まとめ}
 \label{sec:sensor_unit_summary}
@@ -376,5 +349,6 @@ MCUで収集した分光フレームおよび環境センサ値は，上位計�
 C12880MA固有の競合状態（フライングスタート）をハードウェアレベルで回避する．
 さらにSTM32H723ZGに実装し，\SI{5}{\mega\hertz}での安定取得を実測により検証した．
 次章では，本センサユニットにより取得したデータを用いた環境マッピングおよび統合評価について述べる．
+
 
 \end{document}

@@ -5,35 +5,134 @@
 
 \chapter{GNSS品質監視に基づくロバストな自己位置推定}
 \label{ch:method}
-農業用ハウス環境におけるRTK-GNSSは，
+本章では，農業用ハウス環境のような半構造環境において，
+RTK-GNSSの測位品質が遮蔽・マルチパス・差分補正途絶等により間欠的に変動する課題に対処するため，
+LiDAR--Inertial Odometry（LIO）とRTK-GNSSを統合した自己位置推定系を構築する．
+特に，受信機状態量に基づく可用性判定と，LIOとの短時間増分整合性に
+基づく完全性監視（Integrity Monitoring）を組み合わせ，見かけ上は高品質（小共分散）でありながら
+実際には大きく偏る誤測位（HMI: Hazardously Misleading Information）を抑制する
+GNSS品質監視モジュール（GNSS Supervisor）を提案する．
+提案手法は，バックエンドのグラフ最適化に投入するGNSS制約をオンラインに選別・重み付け調整し，
+長時間走行における自己位置推定の安定性向上を目的とする．
 
-\section{実験システム概要}
-AGVプラットフォーム（GS02ベース）、搭載センサ群（Mid360, IMU, ZED-F9P, VESC, 生態センサユニット）、ソフトウェア（ROS 2）からなる全体構成を示す（ブロック図）。
-
-TFツリーを示し、特にLiDARの傾斜搭載について言及する。
-
-\subsection{移動ロボットプラットフォーム}
-\subsection{ソフトウェア構成}
+\section{システム構成}
 \label{sec:system_overview}
-本研究では，前端にFAST-LIOを用いて高頻度な相対オドメトリを生成し，
-後端にRTAB-Mapを用いてループ閉合とグラフ最適化を行う．
-GNSSはRTAB-Mapの拘束入力として用い，robot\_localizationは使用しない．
+本研究で構築した移動ロボットシステムは，
+農業用ハウスを含む半構造化環境において，
+自己位置推定と生育環境センシングを同時に実現することを
+目的として設計されている．
+本システムは，周囲環境およびロボット自身の運動状態を
+観測するハードウェア系と，
+それらの観測情報を統合して位置推定およびマッピングを
+行うソフトウェア系から構成される．
 
-\subsubsection{TF構成}
-本システムではTFを次のように固定する．
+農業環境では，GNSS 測位品質が遮蔽やマルチパスの影響により時間的に大きく変動し，
+またハウス内通路のような単調な幾何構造に起因して，
+LiDAR を用いた自己位置推定が幾何学的に縮退する局面が生じ得る．
+このような環境特性を踏まえ，本研究では，センサ構成そのものの冗長化ではなく，
+観測品質の変動を前提とした情報統合手法を採用する．
+
+以下では，まず移動ロボットプラットフォームおよび搭載センサについて述べ，
+次に LiDAR--IMU オドメトリ，ナビゲーションシステム，
+および NSS品質監視に基づくソフトウェアアーキテクチャについて説明する．
+
+\subsection{移動ロボットプラットフォームと搭載センサ}
+\label{subsec:hardware}
+移動ロボットには，不整地走行を想定したAGVシャーシを用い，
+圃場内を巡回しながら各種センサデータを取得できる構成とした．
+AGVシャシではGmade 社のGS02を採用した．
+環境認識・自己位置推定のために全方位ソリッドステート式3D-LiDAR（Livox社Mid-360）を使用する．
+LiDAR 点群は地図生成および自己位置推定の主要な観測情報として用いる．
+LiDAR に内蔵された IMU は，
+点群の運動歪み補正および短時間の姿勢推定に利用される．
+
+絶対位置計測には2周波RTK-GNSS受信機（u-blox社ZED-F9P）を用い，
+基準局から配信されるRTCM補正情報を利用することで，
+屋外環境においてセンチメータ級の測位精度を目指す．
+また，RTCM補正情報の取得にあたり，
+森林総合研究所が公開しているRTK基準局サービスを利用した\cite{jforest_rtk}．
+RTCM補正情報は無線LANを介してロボットに入力され，
+GNSS受信機によりリアルタイムで適用される．
+
+一方で，農業用ハウス周辺では，
+作物や構造物による遮蔽およびマルチパスの影響により，
+測位状態や共分散が時間的に大きく変動することが確認されている．
+そのため，本研究では GNSS 観測を常に信頼可能な情報として扱うのではなく，
+後述する品質監視に基づいて，
+自己位置推定への寄与を動的に制御する．
+
+また，ロボットの駆動にはBLDC（Brushless Direct Current）モータを使用するが，
+本研究では不整地でのスリップが顕著であったため，
+車輪オドメトリは自己位置推定の主要情報源として用いない．
+センサデータ取得と推定処理はRaspberry Pi 4B上で実行し，無線LANを介して通信を行う．
+
+\subsection{ソフトウェアアーキテクチャ}
+\label{subsec:software}
+本システムはROS~2(Robot Operating System 2)\cite{ref:ROS2} を基盤とし，自己位置推定・地図生成・自律走行をモジュール化して構成する．
+自己位置推定およびマッピングは，フロントエンドとしてLiDAR--IMUオドメトリを
+用いて高頻度の相対運動推定を行い，
+バックエンドとしてRTAB-Map\cite{ref:rtabmap}によりループ閉合と因子グラフ最適化を実行する．
+さらに，GNSS品質監視モジュール（GNSS Supervisor）により観測の採否および共分散調整を行ったRTK-GNSS観測を，
+バックエンド最適化の位置制約として導入する．
+自律走行はNavigation 2\cite{ref:Navigation2}フレームワークを用いて実装し，
+地図およびロボット姿勢に基づく経路計画と追従制御を行う．
+
+\subsubsection{ROS~2}
+\label{subsubsec:ros2}
+ソフトウェア基盤にはROS~2を採用する．
+ROS 2は，ロボットアプリケーション構築のためのソフトウェアラ
+イブラリとツールのセットである．
+ROS 2 は ROS 1 に続く新しいバージョンで，データ配
+信サービス（DDS）に基づき，セキュリティ，リアルタイムサポート，マルチロボット通信，
+非理想的なネットワーク環境での操作など，信頼性の高いロボティクスシステム構築に不可
+欠な機能を実現することができる．
+
+\subsubsection{Navigation2}
+\label{subsubsec:navigation}
+自律走行にはNavigation2を用いる．
+Navigation2は，グローバル経路計画，ローカルプランニング，
+Behavior Treeによるタスク実行を統合的に提供する．
+本システムでは，バックエンドSLAMが提供する地図座標系における自己位置に基づいて経路計画を行い，
+LiDAR観測に基づく局所障害物回避を併用する．
+局所コストマップ生成にはSpatio-Temporal Voxel Layer（STVL）\cite{ref:stvl}を用い，
+3次元点群を時系列に保持するボクセル表現により，近傍障害物の占有推定を行う．
+これにより，農業環境における不整地や局所的な遮蔽物に対しても，
+走行時の安全性と追従安定性の向上を図る．
+
+\subsubsection{LiDAR--IMUオドメトリおよびSLAM}
+\label{subsubsec:lio_slam}
+フロントエンドにはFAST-LIO2\cite{ref:fast_lio2}を採用し，
+LiDAR点群とIMU計測から高頻度の相対オドメトリを推定する．
+FAST-LIO2は，高速なスキャンマッチングとIMU統合により，
+リアルタイム動作に適したオドメトリを提供する．
+
+バックエンドにはRTAB-Mapを用い，
+ループ閉合検出と因子グラフ最適化により地図整合性を向上させる．
+RTAB-Mapを採用した理由は，（i）ループ閉合に基づく長期ドリフト抑制を実装容易に実現できること，
+（ii）複数センサ入力（LiDAR，GNSS等）を制約として扱える枠組みを有すること，
+（iii）将来的に視覚センサ等を追加した場合でも入力モダリティの拡張が比較的容易であり，
+農業環境マッピングへの発展性が高いこと，の3点である．
+
+\subsubsection{座標系とTF構成}
+\label{subsubsec:tf}
+本システムの座標系は以下のように構成する．
 \begin{itemize}
-  \item FAST-LIO：\texttt{odom} $\rightarrow$ \texttt{base\_link}（高頻度相対オドメトリ）
-  \item RTAB-Map：\texttt{map} $\rightarrow$ \texttt{odom}（後端最適化により更新される全局整合変換）
+  \item FAST-LIO2：\texttt{odom} $\rightarrow$ \texttt{base\_link}（高頻度相対オドメトリ）
+  \item RTAB-Map：\texttt{map} $\rightarrow$ \texttt{odom}（バックエンド最適化により更新される変換）
   \item 静的外部パラメータ：\texttt{base\_link} $\rightarrow$ \texttt{lidar}，\texttt{base\_link} $\rightarrow$ \texttt{gps\_antenna}
 \end{itemize}
-これにより，制御系は\texttt{odom}系の連続性を維持しつつ，後端は\texttt{map}系で全局整合を提供できる．
+これにより，制御・追従は\texttt{odom}系の連続性を保持しつつ，
+地図参照のナビゲーションおよび環境マッピングは\texttt{map}系でのグローバル整合を利用できる．
 
 \subsubsection{データフロー}
+\label{subsubsec:dataflow}
+主なデータフローを以下に示す．
 \begin{itemize}
-  \item FAST-LIO：点群＋IMU $\rightarrow$ $\,^{\texttt{odom}}\!T_{\texttt{base}}(t)$
-  \item GNSS Supervisor：GNSS（\texttt{NavSatFix}＋受信機状態量）＋LIOオドメトリ $\rightarrow$ \texttt{GNSS\_gated}（採否・降重済みGNSS）
-  \item RTAB-Map：センサ入力＋LIOオドメトリ＋\texttt{GNSS\_gated} $\rightarrow$ グラフ最適化／ループ閉合 $\rightarrow$ \texttt{map}$\rightarrow$\texttt{odom}，最適化軌跡
-  \item 生態環境マッピング：最適化軌跡に基づき環境センサ値を\texttt{map}座標系へ投影
+  \item FAST-LIO2：点群・IMU $\rightarrow$ $\,^{\texttt{odom}}\!T_{\texttt{base}}(t)$
+  \item GNSS Supervisor：\texttt{NavSatFix}＋受信機状態量＋LIOオドメトリ $\rightarrow$ 採否・共分散調整済みGNSS観測
+  \item RTAB-Map：点群＋LIOオドメトリ＋品質監視後GNSS $\rightarrow$ ループ閉合／因子グラフ最適化 $\rightarrow$ \texttt{map}$\rightarrow$\texttt{odom}，最適化軌跡
+  \item Nav2：地図（\texttt{map}）＋自己位置（\texttt{map}系）＋局所コストマップ（STVL） $\rightarrow$ 経路計画／追従制御
+  \item 生育環境マッピング：最適化軌跡に基づき環境センサ値を\texttt{map}座標系へ投影
 \end{itemize}
 
 
@@ -214,8 +313,5 @@ GNSSは後端グラフ最適化における\textbf{疎な全局拘束}として�
 特に、GNSS品質が悪化した際に、ナイーブ融合(2)が破綻するのに対し、提案手法(3)が安定して精度を維持できることを強調する。
 
 GNSS品質監視モジュールの閾値設定などのパラメータの妥当性についても議論する
-
-\end{document}
-
 
 \end{document}
