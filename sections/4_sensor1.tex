@@ -9,9 +9,9 @@
 高速分光センシングシステムについて述べる．
 対象とする農業環境（信州大学繊維学部の圃場）では，走行しながら連続的に計測を行うため，
 分光データの取得は高い時間分解能と安定性が要求される．
-一方，浜松ホトニクス製ミニ分光器C12880MAは，外部クロックに同期して出力が更新されるため，
+一方，本研究で使用する浜松ホトニクス製ミニ分光器C12880MAは，外部クロックに同期して出力が更新されるため，
 割込み駆動に基づく一般的な取得方式では高周波領域で取得欠落やタイミングずれが生じやすい．
-そこで本研究では，C12880MAの高周波駆動における割込み駆動方式の限界を再現的に示した上で，
+そこで本研究では，割込み駆動方式の限界を再現的に示した上で，
 タイマ・ADC・DMAをハードウェアトリガで連鎖させ，さらにC12880MA固有の競合状態を回避する
 デュアルスイッチFSMアーキテクチャを設計・実装した．
 提案手法はSTM32F446RE（F4シリーズ）およびSTM32H723ZG（H7シリーズ）に実装し，
@@ -23,19 +23,10 @@
 生育環境の基礎量（温度・湿度・気圧，\(\mathrm{CO_2}\)濃度）を同時取得できるよう構成した．
 ユニット全体の構成をFig.~\ref{fig:agv_multisensor_overall}に示す．
 なお，環境量センサを含むユニットの基本構成および計測ロジックは先行研究で確立されており，
-本章ではC12880MAの高速取得に直接関与する要素に限って概要を述べる．
+本章ではC12880MAの高速取得に直接関与する要素にに焦点を当てる．
 各センサおよびMCUのインタフェース回路は付録に示す
 （Fig.~\ref{fig:mcu_circuit}，Fig.~\ref{fig:c12880ma_circuit}，
 Fig.~\ref{fig:s300l_circuit}，Fig.~\ref{fig:bme280_circuit}）．
-
-\subsection{構成要素と主仕様}
-\label{subsec:sensor_unit_specs}
-センサユニットの構成要素と主仕様をTable~\ref{tab:sensor_unit_specs}に示す．
-C12880MAは外部クロックに同期してVIDEO信号が更新されるラインセンサであり，
-MCU側ではトリガ生成とサンプリングタイミングの厳密な同期が必要となる．
-BME280およびS300L-3Vは比較的低速な環境量計測であるが，分光フレームと同一の時刻系で統合することで，
-走行中のマルチモーダル計測を可能とする．
-センサユニットの外観および搭載配置の写真はFig.~\ref{fig:sensor_unit_photo}に示す．
 
 \begin{figure}[t]
   \centering
@@ -44,12 +35,27 @@ BME280およびS300L-3Vは比較的低速な環境量計測であるが，分光
   \label{fig:agv_multisensor_overall}
 \end{figure}
 
+
+\subsection{構成要素と主仕様}
+\label{subsec:sensor_unit_specs}
+センサユニットの構成要素と主仕様をTable~\ref{tab:sensor_unit_specs}に示す．
+また，開発したセンサユニットの外観をFig.~\ref{fig:sensor_unit_photo}に示す．
+C12880MAは外部クロックに同期してVIDEO信号が更新されるラインセンサであり，
+MCU側ではトリガ生成とサンプリングタイミングの厳密な同期が必要となる．
+BME280およびS300L-3Vは比較的低速な環境量計測であるが，
+分光フレームと同一の時刻系で統合することで走行中のマルチモーダル計測を可能とする．
+
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.9\linewidth]{figures/4/placeholder_sensor_unit_photo.pdf}
-  \caption{Photographs of the sensor unit. (A) Top view of the single-layer sensor board integrating the C12880MA mini-spectrometer, BME280, and S300L-3V. (B) Oblique view of the assembled board. (C) Top view with the optical bandpass filter holder mounted, where the C12880MA is located beneath the filter. (D) Oblique view of the fully assembled unit.}
+  \includegraphics[width=\linewidth]{figures/4/placeholder_sensor_unit_photo.pdf}
+  \caption{Photographs of the developed sensor unit. 
+  (A) Top view of the sensor board integrating the C12880MA, BME280, and S300L-3V. 
+  (B) Oblique view showing the component layout. 
+  (C) Top view with the optical bandpass filter holder mounted. 
+  (D) The fully assembled unit ready for installation.}
   \label{fig:sensor_unit_photo}
 \end{figure}
+
 
 \begin{table}[t]
   \centering
@@ -82,34 +88,16 @@ BME280およびS300L-3Vは比較的低速な環境量計測であるが，分光
 \end{table}
 
 \section{分光センサ駆動モジュールの開発における従来の課題}
-C12880MAセンサは，入力ST信号立下り後，TRG信号を出力し，
+C12880MAセンサは，入力ST信号立下り後にTRG信号を出力し，
 所定回数のTRGに同期してVIDEO信号が有効となる．
 そのタイミング概要をFig.~\ref{fig:c12880ma_timing}に示す．
-
 従来は，TRG信号の立ち上がりで割り込みを発生させ，
-割り込みサービスルーチン（以下，ISR）内でADCデータを起動しデータを読み取る割込み駆動方式が用いられてきた．
+割り込みサービスルーチン（以下，ISR）内でADC起動・読出を行う方式が用いられてきた．
 本研究室の先行研究では，LPC1768 MCUと外部ADコンバータ（SPI接続）を用い，この方式でC12880MAから
 \SI{50}{\kilo\hertz}でのデータ取得が報告されている\cite{ref:Kobayashi2021AGV}．
-
-しかし割込み駆動方式では，取得周期ごとにISRが必ず実行されるため，
-割込み応答遅延およびISR処理時間が主要な性能制約となる．
-特に数\si{\mega\hertz}帯では，\(\mathcal{O}(100\,\mathrm{ns})\)オーダの周期でイベントが到来するため，
-ソフトウェア介在による起動遅延が無視できなくなる．
-このため，センサの性能を引き出すには，ソフトウェア割込みに依存しないハードウェア同期機構が必要となる．
-
-\begin{table}[t]
-    \centering
-    \caption{Limits of acquisition frequency with conventional methods}
-    \label{tab:previous_method_limit}
-    \begin{tabular}{l|l|c}
-        \hline
-        \textbf{Method} & \textbf{MCU} & \textbf{Achieved frequency} \\
-        \hline \hline
-        Interrupt only      & STM32F446RE & \SI{25.4}{\kilo\hertz}\\
-        Interrupt + DMA     & STM32F446RE & \SI{130}{\kilo\hertz} \\
-        \hline
-    \end{tabular}
-\end{table}
+しかし数\si{\mega\hertz}帯では，\(\mathcal{O}(100\,\mathrm{ns})\)オーダの周期でイベントが到来するため，
+ソフトウェア介在の起動遅延が無視できず，ISR処理時間が主要な性能制約となる．
+したがって，センサ性能を引き出すにはソフトウェア割込みに依存しないハードウェア同期機構が必要である．
 
 \begin{figure}[ht]
   \centering
@@ -125,6 +113,21 @@ C12880MAセンサは，入力ST信号立下り後，TRG信号を出力し，
 割込みのみでは\SI{25.4}{\kilo\hertz}付近で欠落が発生し，
 DMAを併用してCPU負荷を低減した場合でも\SI{130}{\kilo\hertz}程度が限界であった．
 以上より，従来方式の主要な性能制約が割込み起動遅延およびISR処理時間に起因することを確認した．
+
+
+\begin{table}[t]
+    \centering
+    \caption{Limits of acquisition frequency with conventional methods}
+    \label{tab:previous_method_limit}
+    \begin{tabular}{l|l|c}
+        \hline
+        \textbf{Method} & \textbf{MCU} & \textbf{Achieved frequency} \\
+        \hline \hline
+        Interrupt only      & STM32F446RE & \SI{25.4}{\kilo\hertz}\\
+        Interrupt + DMA     & STM32F446RE & \SI{130}{\kilo\hertz} \\
+        \hline
+    \end{tabular}
+\end{table}
 
 \section{提案手法：デュアルスイッチFSMアーキテクチャ}
 \label{sec:new_architecture}
@@ -168,15 +171,7 @@ ST=LOW（読出期間）に遷移するとブレーキが解除され，TRGOが�
 \subsection{FSMによる制御フロー}
 \label{subsec:fsm_flow}
 デュアルスイッチ設計に基づき，状態遷移により確実な制御を行う．
-状態遷移の概要をFig.~\ref{fig:fsm_state_diagram}に示す．
 さらに制御手順をAlgorithm~\ref{alg:dual_switch_fsm}にまとめる．
-
-% \begin{figure}[t]
-%   \centering
-%   \includegraphics[width=0.92\linewidth]{figures/4/placeholder_fsm_state_diagram.pdf}
-%   \caption{State transition diagram of the dual-switch FSM (placeholder)}
-%   \label{fig:fsm_state_diagram}
-% \end{figure}
 
 \begin{algorithm}[t]
 \caption{C12880MA frame acquisition using a dual-switch FSM}
@@ -216,25 +211,14 @@ STM32H7系列ではデータキャッシュによりDMA転送データの可視�
 併せて，必要に応じてキャッシュ無効化あるいはキャッシュクリーン／インバリデートを実施し，
 連続取得時の欠落・破損を抑制した．
 
-\subsection{タイミング観測のためのデバッグ信号}
-\label{subsec:debug_gpio}
-波形観測による検証のため，GPIOトグルを用いてイベントタイミングを外部に出力した．
-具体的には，DMA開始直前およびDMA完了コールバック内でGPIOを切り替え，
-TRG，TRGO，VIDEOと同時観測することで，サンプリングタイミングと処理遅延を評価した．
-
 \section{性能検証}
 \label{sec:performance_eval}
 本節では，提案アーキテクチャが高速取得を実現していることを，
 (i) 信号タイミングの実測，(ii) 連続取得時のデータ完全性，(iii) スペクトルの再現性，
 の3観点から検証する．
-評価に用いた実験セットアップの外観をFig.~\ref{fig:eval_setup_h723}に示す．
+なお，本実験に用いたSTM32 NUCLEO-H723ZG開発ボードとセンサユニットの
+接続インタフェース詳細については付録を参照する．
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/4/eval_setup_h723.pdf}
-  \caption{Experimental setup for high-speed spectral acquisition. An STM32 NUCLEO-H723ZG development board is connected to the sensor module with an optical bandpass filter via jumper wires for power and signal interfaces.}
-  \label{fig:eval_setup_h723}
-\end{figure}
 
 \subsection{STM32F446REでのアーキテクチャ検証}
 従来方式では\SI{130}{\kilo\hertz}が限界であったSTM32F446REに提案アーキテクチャを実装したところ，
@@ -251,64 +235,135 @@ TRG，TRGO，VIDEOと同時観測することで，サンプリングタイミ�
 ADCのハードウェアキャリブレーションおよびトリガ設定を最適化した．
 その結果，\SI{5}{\mega\hertz}での連続取得に成功した．
 
-\subsection{波形観測によるタイミング検証}
-\label{subsec:timing_scope}
-Fig.~\ref{fig:scope_st_clk_trg_trgo}に，ST，CLK，TRGおよびTRGOの同時観測波形（例：\SI{5}{\mega\hertz}動作時）を示す．
-ST=HIGHの積分期間ではBKINによりTRGOが遮断され，ST=LOWへ遷移後にのみTRGOが有効となることが確認できる．
-さらにFig.~\ref{fig:scope_trg_video_sampling_zoom}に，TRGエッジ近傍の拡大波形を示し，
-VIDEO信号の安定窓内でADCサンプリングが行われていることを確認する．
-これらにより，提案アーキテクチャが意図したハードウェア同期により動作していることを実証する．
+\subsection{オシロスコープのスクリーンショットによる\protect\SI{5}{\mega\hertz}動作確認}
+\label{subsec:timing_scope_screenshot}
 
+Fig.~\ref{fig:scope_clk_trg_video_eos}に，\SI{5}{\mega\hertz}動作時のオシロスコープ画面を示す．
+CH1をTRG信号，CH2をCLK信号，CH4をVIDEO信号，CH3をEOS信号とする．
+なおスクリーンショットではTRGおよびCLKの振幅が実際より小さく表示されているが，
+これはプローブ減衰設定とスケール設定の不整合に起因する表示上の問題であり，
+本図は主としてタイミング関係（周期・位相・エッジ同期）の確認に用いる．
+強光照射時と遮光時を比較すると，EOS近傍でVIDEO出力が停止する挙動が確認できる．
 
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}[b]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/4/SCRN0038.PNG}
+    \caption{Strong illumination}
+    \label{fig:eos_strong}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/4/SCRN0037.PNG}
+    \caption{Dark condition}
+    \label{fig:eos_dark}
+  \end{subfigure}
+  
+  \caption{Oscilloscope screenshots of the End-of-Scan (EOS) timing at \SI{5}{\mega\hertz}. 
+  (a) Under strong illumination, VIDEO (green) drops before EOS (blue) rises. 
+  (b) In dark condition. 
+  Note: Yellow: TRG, Magenta: CLK. The displayed amplitudes of CLK/TRG are compressed due to probe scaling, but the timing relationship is preserved.}
+  \label{fig:scope_clk_trg_video_eos}
+\end{figure}
 
-\subsection{連続取得試験によるデータ完全性評価}
-\label{subsec:data_integrity}
-高速動作では，単発取得が成功しても長時間連続動作で欠落や破損が生じ得る．
-そこで各周波数条件において一定時間連続取得を行い，フレーム欠落率を評価した．
-フレーム欠落率\(R_{\mathrm{loss}}\)を
-\begin{equation}
-  R_{\mathrm{loss}} = 1 - \frac{N_{\mathrm{recv}}}{N_{\mathrm{exp}}}
-\end{equation}
-で定義する．ここで\(N_{\mathrm{exp}}\)は期待されるフレーム数，\(N_{\mathrm{recv}}\)は実際に取得できたフレーム数である．
-評価結果の例をFig.~\ref{fig:loss_rate_vs_freq}に示す（図は実測値に差し替える）．
-本実装では\SI{5}{\mega\hertz}条件においても欠落が観測されないことを確認した．
+\subsection{CSVファイルから再描画したEOS信号，ST信号およびVIDEO信号の波形}
+\label{subsec:timing_csv_plots}
+オシロスコープから保存したCSVデータを用い，制御信号（EOS, ST）と出力信号（VIDEO）の関係を再描画した．
 
+まず，Fig.~\ref{fig:eos_video_high_low}にEOSとVIDEOの同時波形を示す．
+強光照射時（(a)）と遮光時（(b)）のいずれにおいても，
+EOS信号の立ち上がりエッジに同期してVIDEO出力が停止（ベースラインへ復帰）しており，
+ゲートロジックによる読出停止が機能していることを確認した．
 
+次に，様々な照明環境および光源距離におけるST信号とVIDEO信号の応答特性をFig.~\ref{fig:st_video_combined_conditions}に示す．
+Fig.~\ref{fig:st_video_combined_conditions}(a)の遮光条件ではベースラインノイズのみが観測され，
+同(b)の自然光下では光源のスペクトルピークが明瞭に捉えられている．
+また，光源距離を変化させた同(c)（\SI{5}{cm}，強光相当）および同(d)（\SI{25}{cm}，弱光相当）を比較すると，
+光量に応じてVIDEO信号の振幅が適切に変化しており，
+本システムが広いダイナミックレンジで線形応答性を維持していることが確認された．
 
-\subsection{スペクトル再現性の検証}
-\label{subsec:spectrum_validity}
-高速化はタイミング整合だけでなく，得られるスペクトルの妥当性を満たす必要がある．
-そこで固定光源条件下において複数フレームを取得し，スペクトルの平均値と標準偏差により再現性を評価した．
-加えて暗条件（遮光）での暗電流レベルと照射条件での差分を確認し，
-S/N比および外れ値混入の有無を評価した．
-代表例をFig.~\ref{fig:spectrum_repeatability}に示す（図は実測値に差し替える）．
-本結果より，高速取得においてもスペクトル形状の再現性が維持されることを確認した．
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}[b]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/4/eos_video_high.png}
+    \caption{Strong illumination}
+    \label{fig:eos_high}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/4/eos_video_low.png}
+    \caption{Dark condition}
+    \label{fig:eos_low}
+  \end{subfigure}
+  
+  \caption{Replotted waveforms from CSV (EOS and VIDEO) at \SI{5}{\mega\hertz}. 
+  (a) Under strong illumination. 
+  (b) Under dark condition. 
+  In both cases, the VIDEO output (red) becomes inactive precisely at the rising edge of the EOS event (green), verifying the readout termination logic.}
+  \label{fig:eos_video_high_low}
+\end{figure}
 
+\begin{figure}[t]
+  \centering
+  % Row 1: Baseline and Natural Light
+  \begin{subfigure}[b]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/4/st_video_black.png}
+    \caption{Dark condition}
+    \label{fig:cond_dark}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/4/st_video_nature_light.png}
+    \caption{Natural light}
+    \label{fig:cond_nature}
+  \end{subfigure}
+  
+  \vspace{1em} % Add some vertical space between rows
+
+  % Row 2: Distance/Intensity comparison
+  \begin{subfigure}[b]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/4/st_video_5cm_light.png}
+    \caption{Strong illumination (\SI{5}{cm})}
+    \label{fig:cond_5cm}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/4/st_video_25cm_light.png}
+    \caption{Low illumination (\SI{25}{cm})}
+    \label{fig:cond_25cm}
+  \end{subfigure}
+  
+  \caption{ST and VIDEO signal waveforms under different lighting and distance conditions. 
+  (a) Dark condition showing baseline noise. 
+  (b) Natural light showing spectral peaks. 
+  (c) High intensity at \SI{5}{\cm} distance (equivalent to strong illumination). 
+  (d) Low intensity at \SI{25}{\cm} distance. 
+  The results confirm the system's ability to capture spectral features and its dynamic response to varying light intensities.}
+  \label{fig:st_video_combined_conditions}
+\end{figure}
 
 \subsection{サンプリングレート成立性の検討（ADC仕様に基づく）}
 \label{subsec:adc_feasibility}
-本システムが目標とする\SI{5}{\mega\hertz}のデータレートが成立することを，
-MCUのADC仕様とセンサのタイミング制約から検討する．
 センサに供給するクロックが\SI{5}{\mega\hertz}であるため，更新周期は
 \[
-T_{\mathrm{period}} = \frac{1}{\SI{5}{\mega\hertz}} = \SI{200}{\nano\second}
+T_{\mathrm{period}}=\frac{1}{\SI{5}{\mega\hertz}}=\SI{200}{\nano\second}
 \]
-となる．データシートによれば，VIDEO信号が安定しているのはTRG立上りエッジを中心とした半周期程度であるため，
+となる．データシートによればVIDEO信号が安定しているのはTRG立上りエッジを中心とした半周期程度であるため，
 サンプリング可能時間幅は概ね\(\SI{100}{\nano\second}\)となる．
-したがって，ADCのサンプリング時間および総変換時間は次を満たす必要がある．
-\begin{enumerate}\setlength{\itemsep}{0pt}
-  \item サンプリング時間：\(T_{\mathrm{sampling}} \le \SI{100}{\nano\second}\)
-  \item 総変換時間：\(T_{\mathrm{total}} < \SI{200}{\nano\second}\)
-\end{enumerate}
-
-本研究では，サンプリング時間を2.5サイクル，変換時間を12.5サイクル（12ビット分解能）に設定したため，
-合計15サイクルを要する．従って要求されるADCクロック周波数\(f_{\mathrm{ADCK}}\)は
+本研究ではサンプリング時間\(\SI{2.5}{}\)サイクル，変換時間\(\SI{12.5}{}\)サイクル（12-bit）とし合計15サイクルを要するため，
+必要なADCクロック周波数\(f_{\mathrm{ADCK}}\)は
 \begin{equation}
   f_{\mathrm{ADCK}} > \frac{15}{\SI{200}{\nano\second}} = \SI{75}{\mega\hertz}
-  \label{eq:fadck_requirement}
 \end{equation}
-となる．STM32H723ZGのデータシート\cite{ref:stm32h723zg}において，
-12ビットADCの最大クロック周波数が\SI{75}{\mega\hertz}と規定されていることから，
+となる．STM32H723ZGのデータシート\cite{ref:stm32h723zg}において12-bit ADCの最大クロック周波数が\SI{75}{\mega\hertz}と規定されていることから，
 設定が理論上成立する．実測により本条件で安定動作することを確認した．
 
 
@@ -334,9 +389,9 @@ T_{\mathrm{period}} = \frac{1}{\SI{5}{\mega\hertz}} = \SI{200}{\nano\second}
 分光データと同時に，生育環境の基礎量として温度・湿度・気圧および\(\mathrm{CO_2}\)濃度を取得するため，
 BME280およびS300L-3Vを併用した．これら環境センサの取得処理そのものは先行研究で確立された実装に基づくが，
 本研究ではセンサユニットのMCUをSTM32系列へ変更したことに伴い，
-デバイスドライバおよび周辺制御（I\(^2\)C/UART設定，割込み・DMA設定，タイマによる周期実行）を再設計し，
-既存処理をSTM32環境へポーティングした．具体的には，BME280はI\(^2\)C通信により所定周期で計測し，
-S300L-3VはUART通信により応答フレームを取得する．各計測値にはMCU内の単調増加タイムスタンプを付与し，
+デバイスドライバおよび周辺制御（I\(^2\)C設定，割込み・DMA設定，タイマによる周期実行）を再設計し，
+既存処理をSTM32環境へポーティングした．具体的には，S300L-3VやBME280はI\(^2\)C通信により所定周期で計測する．
+各計測値にはMCU内の単調増加タイムスタンプを付与し，
 分光フレームと同一の時刻系でログ化することで，走行中のマルチモーダル計測データとして統合可能とした．
 % 収集したデータは上位計算機へ周期的に送信し記録する．通信方式およびデータフォーマットの詳細は，
 % 再現性確保の観点から付録にまとめる．
@@ -344,11 +399,10 @@ S300L-3VはUART通信により応答フレームを取得する．各計測値�
 \section{まとめ}
 \label{sec:sensor_unit_summary}
 本章では，C12880MAを用いた高速分光センシングの実現に向け，
-割込み駆動方式の制約を明確化し，デュアルスイッチFSMアーキテクチャを提案した．
-提案手法は，CLKオン・オフ制御とBKINによるトリガ経路ゲーティングにより，
+割込み駆動方式の制約を再現的に示し，デュアルスイッチFSMアーキテクチャを提案した．
+提案手法はCLKオン・オフ制御とBKINによるトリガ経路ゲーティングにより，
 C12880MA固有の競合状態（フライングスタート）をハードウェアレベルで回避する．
 さらにSTM32H723ZGに実装し，\SI{5}{\mega\hertz}での安定取得を実測により検証した．
 次章では，本センサユニットにより取得したデータを用いた環境マッピングおよび統合評価について述べる．
-
 
 \end{document}
