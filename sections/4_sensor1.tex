@@ -72,7 +72,7 @@ BME280およびS300L-3Vは比較的低速な環境量計測であるが，
     Mini-spectrometer C12880MA
       & Hamamatsu Photonics
       & Analog (VIDEO), CLK/ST/TRG
-      & High-speed synchronized acquisition \cite{ref:C12880MA} \\
+      & High-speed synchronized acquisition  \\
     BME280 (AE-BME280)
       & Bosch Sensortec / Akizuki Denshi
       & I\(^2\)C
@@ -100,6 +100,44 @@ C12880MAセンサは，入力ST信号立下り後にTRG信号を出力し，
 しかし数\si{\mega\hertz}帯では，\(\mathcal{O}(100\,\mathrm{ns})\)オーダの周期でイベントが到来するため，
 ソフトウェア介在の起動遅延が無視できず，ISR処理時間が主要な性能制約となる．
 したがって，センサ性能を引き出すにはソフトウェア割込みに依存しないハードウェア同期機構が必要である．
+
+従来方式では，C12880MAが出力するTRG周期ごとに割込みを発生させ，
+ISR内でADC起動とデータ読出を実行する構成が一般的である．
+しかしMHz帯ではイベント周期が\SI{200}{\nano\second}オーダとなり，
+割込み遅延およびISR実行時間のばらつき（jitter）がサンプリング位相へ直接投影されるため，
+取得欠落やタイミングずれが顕在化しやすい．
+そこで本研究では，従来方式（ISR駆動）と提案方式（TIM--ADC--DMA連鎖）における
+データパスの差異を図示し，性能制約の発生要因を明確化する．
+両方式の比較をFig.~\ref{fig:acq_arch_compare}に示す．
+
+
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}[b]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/4/isr.png}
+    \caption{Interrupt-driven acquisition (conventional)}
+    \label{fig:acq_isr_conventional}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/4/input_capture.png}
+    \caption{Timer-triggered acquisition with DMA (proposed)}
+    \label{fig:acq_hwtrig_proposed}
+  \end{subfigure}
+
+  \caption{Comparison of acquisition data paths.
+  In the conventional method, the CPU handles every TRG event in an ISR, which becomes the bottleneck at MHz rates.
+  In the proposed method, the TRG edge is captured by a timer and directly drives ADC conversion via an external trigger, while DMA streams samples to memory; CPU involvement is limited to frame start/end control.}
+  \label{fig:acq_arch_compare}
+\end{figure}
+
+以上の比較から，高周波領域における主要な性能制約が周期ごとのCPU介在に起因することが分かる．
+次節では，STM32F446REを用いて従来方式の限界を再現的に確認し（Table~\ref{tab:previous_method_limit}），
+その後，提案方式により制約を回避できることを示す．
+
+
 
 \begin{figure}[ht]
   \centering
@@ -159,7 +197,7 @@ ST信号により積分区間を定義した上で，ST立下り後に読出を�
 本研究ではTRG同期のハードウェアトリガを用いてADC変換を駆動し，
 DMAにより画素列をストリーミング転送することで，サンプリング位相の決定性を確保する．
 
-\subsection{フレーム取得シーケンス（ST制御とDMAストリーミング）}
+\subsection{フレーム取得シーケンス}
 \label{subsec:acq_sequence}
 1フレームの取得は次の手順で構成される．
 (i) STをHighに設定して積分を開始し，所定の積分時間\(T_{\mathrm{int}}\)を保持する．
@@ -211,7 +249,7 @@ ST遷移からDMA開始までのソフトウェア起動遅延が，画素列上
 \label{sec:implementation_points}
 本節では，提案アーキテクチャをMCU上で安定動作させるための実装要点を述べる．
 
-\subsection{ハードウェアトリガ連鎖（Timer--ADC--DMA）}
+\subsection{ハードウェアトリガ連鎖}
 \label{subsec:hw_trigger_chain}
 ADCは外部トリガ入力により変換を開始し，変換結果をDMAでメモリへ連続転送する．
 本システムでは，TIM2のPWMによりC12880MAへCLKを供給し，
@@ -370,7 +408,7 @@ Fig.~\ref{fig:st_video_combined_conditions}(a)の遮光条件ではベースラ�
   \label{fig:st_video_combined_conditions}
 \end{figure}
 
-\subsection{サンプリングレート成立性の検討（ADC仕様に基づく）}
+\subsection{サンプリングレート成立性の検討}
 \label{subsec:adc_feasibility}
 センサに供給するクロックが\SI{5}{\mega\hertz}であるため，更新周期は
 \[
@@ -383,7 +421,7 @@ T_{\mathrm{period}}=\frac{1}{\SI{5}{\mega\hertz}}=\SI{200}{\nano\second}
 \begin{equation}
   f_{\mathrm{ADCK}} > \frac{15}{\SI{200}{\nano\second}} = \SI{75}{\mega\hertz}
 \end{equation}
-となる．STM32H723ZGのデータシート\cite{ref:stm32h723zg}において12-bit ADCの最大クロック周波数が\SI{75}{\mega\hertz}と規定されていることから，
+となる．STM32H723ZGのデータシートにおいて12-bit ADCの最大クロック周波数が\SI{75}{\mega\hertz}と規定されていることから，
 設定が理論上成立する．実測により本条件で安定動作することを確認した．
 
 

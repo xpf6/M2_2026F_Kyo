@@ -26,6 +26,16 @@ GNSS品質監視モジュール（GNSS Supervisor）を提案する．
 観測するハードウェア系と，
 それらの観測情報を統合して位置推定およびマッピングを
 行うソフトウェア系から構成される．
+全体構成と主要な情報流れをFig.~\ref{fig:system_overview}に示す．
+以降ではハードウェア，ソフトウェア，各座標系の関係を順に述べる．
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.9\linewidth]{figures/3/system.png}
+  \caption{Overview of the system architecture and data flow. The PC-side ROS~2 stack runs RTAB-Map (SLAM) and Navigation2 with STVL (planning and control), while the AGV-side ROS~2 stack runs FAST-LIO2 to provide registered point clouds and odometry. Sensor topics (LiDAR/IMU/GNSS/environment) are exchanged via ROS~2, and velocity commands are sent as \texttt{cmd\_vel} (\texttt{geometry\_msgs/Twist}). The TF/\texttt{map} frame relationship used for navigation is also illustrated.}
+  \label{fig:system_overview}
+\end{figure}
+
 
 農業環境では，GNSS 測位品質が遮蔽やマルチパスの影響により時間的に大きく変動し，
 またハウス内通路のような単調な幾何構造に起因して，
@@ -141,7 +151,7 @@ RTAB-Mapを採用した理由は，（i）ループ閉合に基づく長期ド�
   \item 生育環境マッピング：最適化軌跡に基づき環境センサ値を\texttt{map}座標系へ投影
 \end{itemize}
 
-
+\clearpage
 \section{農業環境における課題と故障モード}
 \label{sec:problem_definition}
 農業用ハウス環境におけるRTK-GNSSは，多くの時間帯で高精度に利用可能である一方，
@@ -316,6 +326,8 @@ GeographicLibは高精度かつ汎用的であり，広範囲移動や標高変�
 ただし，走行範囲が大きくなる場合や高度差が無視できない場合には，
 楕円体モデルに基づく厳密変換（GeographicLib等）の導入が望ましい．
 
+
+\clearpage
 \section{実験と評価}
 \label{sec:exp_evaluation}
 本節では，実環境（信州大学農場のハウス内通路）で収集したROS~2 bagデータを用い，
@@ -335,7 +347,7 @@ ROS~2 bagとして同期記録した．
 実験環境の概観をFig.~\ref{fig:env_photos}に示す．
 
 % 環境写真（2枚並べ）
-\begin{figure}[t]
+\begin{figure}[h]
   \centering
   \begin{subfigure}[t]{0.49\linewidth}
     \centering
@@ -424,38 +436,55 @@ NISと判定の時系列により確認する（\S\ref{subsec:timeline_response}
 
 \subsection{実環境評価結果}
 \label{subsec:real_world_results}
-Fig.~\ref{fig:map_compare_three}に，各手法で生成された点群地図と推定軌跡を示す
-（白：点群地図，黄：推定軌跡）．
+Figs.~\ref{fig:map_lio_only}--\ref{fig:map_naive_partial}に，
+各手法で生成された点群地図と推定軌跡を示す（白：点群地図，黄：推定軌跡）．
 Naive fusionではNLOS由来の測位逸脱が疑われる区間において誤ったGNSS拘束が因子グラフへ注入され，
 局所的な地図歪み（壁・通路形状の崩れ）が生じる場合が確認された．
 一方，Proposedでは当該区間のGNSS観測が遮断され，
 地図の一貫性が改善されることを確認した．
 
-\begin{figure}[t]
+
+\clearpage
+
+\begin{figure}[p]
   \centering
-  \begin{subfigure}[t]{0.32\linewidth}
+
+  % ---- Row 1 ----
+  \begin{minipage}[t]{0.48\linewidth}
     \centering
     \includegraphics[width=\linewidth]{figures/3/Only_LIO.png}
-    \caption{LIO only}
-    \label{fig:map_only_lio}
-  \end{subfigure}
+    \captionof{figure}{Mapping result with LIO only (white: point cloud map, yellow: estimated trajectory).}
+    \label{fig:map_lio_only}
+  \end{minipage}
   \hfill
-  \begin{subfigure}[t]{0.32\linewidth}
+  \begin{minipage}[t]{0.48\linewidth}
     \centering
     \includegraphics[width=\linewidth]{figures/3/LIO_NLOS_FIX_all.png}
-    \caption{Naive fusion (with NLOS-induced GNSS outliers)}
-    \label{fig:map_naive_nlos}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[t]{0.32\linewidth}
+    \captionof{figure}{Mapping result with naive GNSS fusion (white: point cloud map, yellow: estimated trajectory).}
+    \label{fig:map_naive_all}
+  \end{minipage}
+
+  \vspace{6mm}
+
+  % ---- Row 2 ----
+  \begin{minipage}[t]{0.48\linewidth}
     \centering
     \includegraphics[width=\linewidth]{figures/3/LIO+proposed.png}
-    \caption{Proposed (GNSS Supervisor)}
-    \label{fig:map_proposed}
-  \end{subfigure}
-  \caption{Qualitative comparison of mapping results (white: point cloud map, yellow: estimated trajectory)}
-  \label{fig:map_compare_three}
+    \captionof{figure}{Mapping result with the proposed GNSS Supervisor (white: point cloud map, yellow: estimated trajectory).}
+    \label{fig:map_proposed_all}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/3/LIO_NLOS_FIX_part.png}
+    \captionof{figure}{Example of local distortion observed after the anomaly in naive fusion (partial view).}
+    \label{fig:map_naive_partial}
+  \end{minipage}
+
 \end{figure}
+
+\clearpage
+
 
 \subsection{NLOS疑い区間における挙動の詳細}
 \label{subsec:NLOS_detail}
@@ -469,20 +498,13 @@ Fig.~\ref{fig:map_naive_partial}に示す．
 したがって，バックエンド汚染リスクを低減する観点からは，
 NLOS由来の外れ値が疑われる観測を事前に遮断し，最適化へ投入しないことが重要である．
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.75\linewidth]{figures/3/LIO_NLOS_FIX_part.png}
-  \caption{Example of local distortion observed after the anomaly in naive fusion (partial view)}
-  \label{fig:map_naive_partial}
-\end{figure}
-
 \subsection{品質監視の時間応答}
 \label{subsec:timeline_response}
 提案法が異常区間をどのように検知し遮断したかを示すため，
-2025-10-23ログに対するNIS（中央値）と最終判定（PASS/FAIL）の時系列をFig.~\ref{fig:timeline_1023}に示す．
+2025-10-23ログに対するNISと最終判定の時系列をFig.~\ref{fig:timeline_1023}に示す．
 図中の破線は判定閾値$\gamma_{\mathrm{pass}}$を表し，上部のバーは最終的な採否（Accept/Reject）を示す．
 異常区間ではNISが急増し，GNSS観測がRejectとして遮断されていることが分かる．
-また，NISが閾値未満であっても，可用性判定（例：fix品質，補助状態量の鮮度）や
+また，NISが閾値未満であっても，可用性判定や
 回復ロックアウトによりRejectとなる場合がある．
 本研究ではバックエンド最適化への誤拘束注入を最小化するため，
 このような保守的な判定方針を採用した．
