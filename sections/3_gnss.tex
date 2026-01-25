@@ -34,7 +34,7 @@ LiDAR を用いた自己位置推定が幾何学的に縮退する局面が生�
 
 以下では，まず移動ロボットプラットフォームおよび搭載センサについて述べ，
 次に LiDAR--IMU オドメトリ，ナビゲーションシステム，
-および NSS品質監視に基づくソフトウェアアーキテクチャについて説明する．
+およびGNSS品質監視に基づくソフトウェアアーキテクチャについて説明する．
 
 \subsection{移動ロボットプラットフォームと搭載センサ}
 \label{subsec:hardware}
@@ -65,13 +65,21 @@ GNSS受信機によりリアルタイムで適用される．
 本研究では不整地でのスリップが顕著であったため，
 車輪オドメトリは自己位置推定の主要情報源として用いない．
 センサデータ取得と推定処理はRaspberry Pi 4B上で実行し，無線LANを介して通信を行う．
+AGVの写真や構成をFig.~\ref{fig:robot_platform}に示す．
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/3/AGV.pdf}
+  \caption{移動ロボットプラットフォームと搭載センサ構成}
+  \label{fig:robot_platform}
+\end{figure}
 
 \subsection{ソフトウェアアーキテクチャ}
 \label{subsec:software}
 本システムはROS~2(Robot Operating System 2)\cite{ref:ROS2} を基盤とし，自己位置推定・地図生成・自律走行をモジュール化して構成する．
 自己位置推定およびマッピングは，フロントエンドとしてLiDAR--IMUオドメトリを
 用いて高頻度の相対運動推定を行い，
-バックエンドとしてRTAB-Map\cite{ref:rtabmap}によりループ閉合と因子グラフ最適化を実行する．
+バックエンドとしてRTAB-Map\cite{ref:2018rtabmap}によりループ閉合と因子グラフ最適化を実行する．
 さらに，GNSS品質監視モジュール（GNSS Supervisor）により観測の採否および共分散調整を行ったRTK-GNSS観測を，
 バックエンド最適化の位置制約として導入する．
 自律走行はNavigation 2\cite{ref:Navigation2}フレームワークを用いて実装し，
@@ -79,13 +87,10 @@ GNSS受信機によりリアルタイムで適用される．
 
 \subsubsection{ROS~2}
 \label{subsubsec:ros2}
-ソフトウェア基盤にはROS~2を採用する．
-ROS 2は，ロボットアプリケーション構築のためのソフトウェアラ
-イブラリとツールのセットである．
-ROS 2 は ROS 1 に続く新しいバージョンで，データ配
-信サービス（DDS）に基づき，セキュリティ，リアルタイムサポート，マルチロボット通信，
-非理想的なネットワーク環境での操作など，信頼性の高いロボティクスシステム構築に不可
-欠な機能を実現することができる．
+ソフトウェア基盤にはROS~2(Robot Operating System 2)\cite{ref:ROS2}を採用する．
+ROS~2はDDSに基づく通信機構を備え，分散処理，実運用における信頼性，およびモジュール再利用性の観点から，
+研究開発用ロボットシステムの構築に適している．本研究では，各センサのデータ取得，自己位置推定，地図生成，
+および自律走行をノードとして分離し，トピックおよびTFにより統合する．
 
 \subsubsection{Navigation2}
 \label{subsubsec:navigation}
@@ -162,156 +167,329 @@ RTAB-Mapを採用した理由は，（i）ループ閉合に基づく長期ド�
 そのために，後端へ注入するGNSS拘束をオンラインで選別する品質監視モジュールを設計する．
 
 
-\section{提案手法：GNSS Supervisorの設計}
+\section{提案手法：GNSS品質監視モジュールの設計}
 \label{sec:supervisor}
-Supervisorは，可用性判別，完全性監視，LIO信頼度から構成される．可用性ゲートは利用不可を遮断し，
-完全性ゲートはHMI／外れ値混入を抑制する．ただしLIOも退化し得るため，
-LIO信頼度に基づき完全性ゲートの厳しさを調整し，
-必要に応じて完全性ゲートを停止して可用性判別のみへ切り替える．
+本研究では，RTAB-Map に導入される GNSS 制約が因子グラフ最適化の結果を劣化させないことを最優先課題とし，
+GNSS観測をオンラインで選別する GNSS 品質監視モジュールを設計した．
+農業用ハウス環境において，RTK-GNSS は多くの時間帯で高精度に利用可能である一方，
+遮蔽，マルチパス，および差分補正の途絶に起因して，まれに HMI を含む観測が発生する可能性がある．
+このとき，誤拘束が1サンプルでもRTAB-Map注入されると，地図作成に劣化を引き起こす場合がある．
+したがって本研究では，GNSS出力の重みを段階的に調整するのではなく，
+採用または遮断によってRTAB-Mapへの拘束注入を制御する．
 
-\subsection{可用性ゲート}
+\subsection{入出力と二値ポリシー}
+\label{subsec:supervisor_io}
+品質監視モジュールの入力は，GNSS観測\texttt{NavSatFix}，
+受信機の補助状態量（測位状態，衛星数，DOP，補正受信状況など），
+およびLIOが出力する相対オドメトリである．出力はRTAB-Mapへ与える\texttt{NavSatFix}であり，
+観測の扱いを次の二値で決定する．
+
+\begin{itemize}
+  \item \textbf{Accept（採用）}: 観測をRTAB-Mapへ注入する（観測が持つ共分散を基本的に保持する）．
+  \item \textbf{Reject（遮断）}: 観測をRTAB-Mapへ注入しない，または固定の大きな対角共分散へ置換し，拘束として確実に無効化する．
+\end{itemize}
+
+HMIが共分散を過小に偽装し得る点を踏まえ，本研究では遮断時に倍率拡大による重み調整へ依存せず，
+固定値の対角共分散により拘束を確実に無効化する実装とした．具体的には，遮断時の出力共分散を
+$\mathrm{diag}(C_{\mathrm{blk}},C_{\mathrm{blk}},C_{\mathrm{blk}})$とし，
+$C_{\mathrm{blk}}$は十分大きい定数（例：$99999$）として設定する．
+
+\subsection{可用性スクリーニング}
 \label{subsec:availability_gate}
-可用性ゲートは，LIO等の外部推定に依存せず，
-受信機自身が提供する状態量に基づく入力有効性検査として実装する．
-目的は，測位不可や補正途絶に起因する利用不可を確実に遮断し，
-後端グラフへ不正な拘束が注入されることを防ぐことである．
+可用性スクリーニングは，LIO等の外部推定に依存せず，
+受信機自身が提供する状態量に基づいて GNSS観測の基本的な入力妥当性を判定する．
+目的は，測位不成立や補正途絶などの利用不可能状態を確実に遮断し，
+バックエンドグラフへ不正な拘束が注入されることを防ぐことである．
 
-\subsubsection{状態量}
-受信機から次の状態量を取得・記録し，判別に用いる．
-\begin{itemize}
-  \item 測位状態（no-fix，3D-fix，RTK-float，RTK-fix等）
-  \item 使用衛星数（あるいは測位に寄与する衛星数）
-  \item 搬送波解の状態
-  \item 差分補正の受信状態（RTCM age，途絶時間）
-  \item 位置推定共分散（NavSatFixに付随するposition\_covariance）
-\end{itemize}
-NavSatFixのみで不足する場合は，
-受信機拡張ステータス（UBX等）を併記してログ化する．
+本研究では，補助状態量（UBX等）が一時的に欠落・遅延する状況を考慮し，
+「補助情報が古い／未取得」であること自体では直ちに遮断せず，
+明確なハード不成立条件のみを遮断トリガとした．
+例として，
+(1) 測位状態が規定未満，(2) 衛星数不足，(3) PDOP過大，
+(4) 水平精度（hAcc）が閾値超過，(5) RTCM途絶が閾値超過，
+などを用いる．
 
-\subsubsection{4状態モデルとヒステリシス}
-GNSS入力の状態をS0--S3に分類する．
-\begin{itemize}
-  \item \textbf{S0：NO\_MEAS（利用不可）}\\
-  no-fix，衛星数不足，RTCM age超過，共分散が未定義（NaN）等．
-  \item \textbf{S1：DEGRADED（降級可用）}\\
-  RTK-float／3D-fix等で測位は成立するが精度が劣化している状態．
-  \item \textbf{S2：CANDIDATE（回復直後の観察状態）}\\
-  S0から回復した直後であり，安定性を確認するための遷移状態．
-  \item \textbf{S3：TRUSTED（可用）}\\
-  RTK-fixが安定し，状態量が良好である状態（完全性ゲート通過を前提に最終採用）．
-\end{itemize}
+また，起動直後は履歴が十分でなく，増分整合性検定が成立しない場合があるため，
+初期の一定サンプルは暫定的に採用として扱う初期化区間を設けた．
+これにより正常区間が開始直後から連続して遮断になる挙動を抑制する．
 
-判定の過敏さを避けるため，ヒステリシスを導入する．例えば，
-\begin{itemize}
-  \item 利用不可条件が連続$N_{\mathrm{bad}}$回成立 $\Rightarrow$ S0へ遷移し，GNSSを封鎖
-  \item 利用可能条件が連続$M_{\mathrm{good}}$回成立 $\Rightarrow$ S2へ遷移し，観察後にS3候補
-\end{itemize}
-とする．
+また，起動直後は履歴が十分でなく増分整合性検定が成立しない場合があるため，
+初期の一定サンプルはIntegrity gateを適用せず，
+Availability gateのみで妥当性を確認した上で暫定的に採用する初期化区間を設けた．
+これにより，正常区間であっても開始直後から連続して遮断となる挙動を抑制する．
 
-\subsection{完全性ゲート（Integrity Gate）：短時間増分整合性検定}
+
+\subsection{完全性監視：短時間増分整合性に基づく遮断判定}
 \label{subsec:integrity_gate}
-完全性ゲートは，受信機状態が良好に見えるにもかかわらず外れ値を含むHMIを抑制するための機構である．本研究では，絶対座標の一致を仮定せず，\textbf{短時間窓の位置増分}を比較することで外れ値混入を検出する．増分形式を採用することで，初期方位や座標原点の差異に対して頑健となる．
-
-\subsubsection{GNSSの局所座標化}
-完全性検定は局所直交座標系（ENU）で実施する．$t$時刻のGNSS測位を$\,^{\texttt{enu}}\bm{p}_{\mathrm{gnss}}(t)$とし，基準点（原点）は可用状態S3が成立した初回の測位（あるいは観察状態S2を経て安定と判断した測位）を用いて設定する．局所座標化の実装は\ref{sec:enu_conversion}節に述べる．
-
-\subsubsection{増分残差とNIS}
-時間窓$\Delta T$に対して，LIOおよびGNSSの位置増分を次式で定義する．
-\begin{align}
-  \Delta \bm{p}_{\mathrm{lio}}(t)  &= \bm{p}_{\mathrm{lio}}(t)-\bm{p}_{\mathrm{lio}}(t-\Delta T), \\
-  \Delta \bm{p}_{\mathrm{gnss}}(t) &= \bm{p}_{\mathrm{gnss}}(t)-\bm{p}_{\mathrm{gnss}}(t-\Delta T).
-\end{align}
-ここで$\bm{p}_{\mathrm{gnss}}(t)$はENU座標のGNSS位置，$\bm{p}_{\mathrm{lio}}(t)$はLIOオドメトリを同一座標系で表現した位置（\texttt{odom}系）である．増分残差を
+完全性監視は，受信機状態が良好に見えるにもかかわらず外れ値を含むHMIを抑制するための機構である．
+本研究では絶対位置の一致を仮定せず，短時間窓$\Delta T$の位置増分を比較する．
+時刻$t$におけるGNSS位置（ENU）を$\bm{p}_{\mathrm{gnss}}(t)$，
+LIOオドメトリを$\bm{p}_{\mathrm{lio}}(t)$とし，
+増分残差を
 \begin{equation}
-  \bm{r}(t)=\Delta \bm{p}_{\mathrm{gnss}}(t)-\Delta \bm{p}_{\mathrm{lio}}(t)
+  \bm{r}(t)=\bigl[\bm{p}_{\mathrm{gnss}}(t)-\bm{p}_{\mathrm{gnss}}(t-\Delta T)\bigr]
+           -\bigl[\bm{p}_{\mathrm{lio}}(t)-\bm{p}_{\mathrm{lio}}(t-\Delta T)\bigr]
 \end{equation}
-とし，共分散を
+で定義する．
+GNSS共分散$\Sigma_{\mathrm{gnss}}(t)$は\texttt{NavSatFix}から抽出し，
+LIO側は等方近似$\Sigma_{\mathrm{lio}}=\sigma_{\mathrm{lio}}^{2}\bm{I}$を用いる．
 \begin{equation}
-  \bm{S}(t)=\Sigma_{\mathrm{gnss}}(t)+\Sigma_{\mathrm{lio}}(t)
-\end{equation}
-で近似する．正規化イノベーション二乗（NIS）を
-\begin{equation}
+  \bm{S}(t)=\Sigma_{\mathrm{gnss}}(t)+\Sigma_{\mathrm{lio}}(t),
+  \qquad
   d(t)=\bm{r}(t)^{\mathsf{T}}\bm{S}(t)^{-1}\bm{r}(t)
 \end{equation}
-として計算し，$d(t)>\gamma$のとき外れ値疑いと判定する．$\gamma$は自由度3の$\chi^2$分布に基づいて設定し，$\Delta T$は0.5--1.5\,sの範囲で実測により調整する（本研究では初期値として$\Delta T=1.0$\,sを用いる）．
+を計算し，$d(t)$が閾値$\gamma$を超える場合にRejectとする．
 
-\subsubsection{down-weight優先の抑制とヒステリシス}
-本システムでは，GNSSが大部分の時間帯で有効であるため，誤報（False Alarm）による過剰封鎖は絶対拘束の喪失を招く．そこで，判定結果の反映は\textbf{down-weight（寄与抑制）を優先}し，明確な外れ値と判断した場合のみdropする．
+ここで，HMIによる過小共分散偽装に対して検定が過敏化しないよう，
+$\Sigma_{\mathrm{gnss}}$の対角要素には下限値（covariance floor）を与える．
+さらに，判定のチャタリングを避けるため，
+$d(t)$に短い履歴の中央値フィルタを適用し，
+連続不合格が一定回数に達した場合にRejectを維持する（ヒステリシス）．
 
-具体的には，外れ値疑いの程度に応じてスケール$\alpha(t)\ge 1$を設定し，
-\begin{equation}
-  \Sigma_{\mathrm{gnss}}'(t)=\alpha(t)\,\Sigma_{\mathrm{gnss}}(t)
-\end{equation}
-として後端へ入力する．$\alpha(t)$は段階設定（例：$1,\,10,\,100$）とし，再現性を確保する．またヒステリシスとして，
-\begin{itemize}
-  \item 不合格が連続$N_{\mathrm{bad}}$回 $\Rightarrow$ 封鎖（dropもしくは強いdown-weight）
-  \item 合格が連続$M_{\mathrm{good}}$回 $\Rightarrow$ 解封（通常入力へ復帰）
-\end{itemize}
-を適用する．
+\subsection{HMI開始直後の1サンプル注入を防ぐ設計}
+\label{subsec:first_frame_block}
+増分整合性検定は窓幅や履歴処理を伴うため，原理的に検知遅延が生じ得る．
+しかし HMI においては，攻撃開始直後の最初の観測がバックエンド最適化へ注入されるだけで，
+地図推定結果が回復不能となる場合がある．
+そこで本研究では，HMI開始直後の 1 サンプル目を確実に遮断することを目的として，
+以下の二つの機構を組み合わせた．
 
-\subsection{LIO信頼度（LIO Confidence）による退化保護}
-\label{subsec:lio_confidence}
-長廊等でLIOが退化している局面では，LIOを参照として完全性検定を行うと誤判定が増加し得る．そこでLIO信頼度$C_{\mathrm{lio}}\in[0,1]$を導入し，完全性ゲートの厳しさを調整する．
+(1) \textbf{即時遮断ルール}：
+GNSS が極端に小さい共分散，すなわち過剰な信頼度を報告している場合に限り，
+増分残差のノルム $\|\bm{r}(t)\|$ が微小閾値 $r_{\mathrm{tw}}$ を超えた瞬間に，
+当該観測を遮断と判定する．
+本規則は，小共分散かつ系統的偏りを伴うHMI に対して，
+同一サンプルでの即時遮断を実現することを目的としている．
 
-\subsubsection{信頼度指標（オンラインproxy）}
-実装容易性と再現性を重視し，$C_{\mathrm{lio}}$は次のいずれか（または組合せ）で定義する．
-\begin{itemize}
-  \item \textbf{内部統計に基づく指標（取得可能な場合）}：有効特徴点数，残差統計，反復回数，推定共分散の増大など．
-  \item \textbf{点群幾何に基づく退化proxy（内部量が取得困難な場合）}：最近傍$K$フレーム点群に対してPCAを行い，固有値$\lambda_1\ge\lambda_2\ge\lambda_3$の比（例：$\rho=\lambda_3/\lambda_1$）を退化指標とする．$\rho$が小さい場合，強い一次元性を示し長廊退化を疑う．
-\end{itemize}
-
-\subsubsection{信頼度に基づく調整規則}
-$C_{\mathrm{lio}}$が低い場合は，次のいずれかで完全性ゲートを緩和する．
-\begin{enumerate}
-  \item $\Sigma_{\mathrm{lio}}$の拡大：$C_{\mathrm{lio}}$低下に応じて$\Sigma_{\mathrm{lio}}$を拡大し，NISが過敏に反応することを防ぐ．
-  \item 閾値$\gamma$の緩和：$C_{\mathrm{lio}}$低下に応じて$\gamma$を増大させる．
-  \item 完全性ゲートの一時停止：$C_{\mathrm{lio}}<\tau_C$のとき，完全性ゲートを停止し，可用性ゲートのみによる入力管理へ切り替える．
-\end{enumerate}
-これにより，LIO退化局面で「誤った参照に基づいてGNSSを恒常的に否定する」状況を回避する．
+(2) \textbf{1 サンプル遅延による決定後出力}： 
+時刻 $t$ における GNSS 観測は即時に RTAB-Map へ渡さず，一旦バッファに保持する．
+次サンプル $t+\delta$ において得られた判定結果が Reject であった場合には，
+バッファされていた時刻 $t$ の観測を破棄する．
+この処理により，窓検定に起因する検知遅延が存在する場合であっても，
+攻撃開始直後の最初の観測がバックエンド最適化へ注入される確率を低減できる．
+本研究では，地図破綻リスクの低減を最優先とし，
+1 サンプル分のレイテンシ増加を許容した．
 
 \section{WGS84から局所ENUへの変換}
 \label{sec:enu_conversion}
-Supervisor内部の整合性検定では，GNSSを局所直交座標へ変換する必要がある．出力はRTAB-Mapへ\texttt{NavSatFix}として与えるため，\textbf{変換はSupervisor内部のみに閉じる}．
+完全性監視では，GNSSとLIOの短時間増分を同一の直交座標系で比較する必要があるため，
+GNSS測位（緯度・経度）を局所直交座標へ変換する．
+GNSSが出力する測位は一般にWGS84（World Geodetic System 1984）に基づく地理座標
+$(\varphi,\lambda,h)$（緯度・経度・楕円体高）で表される．
+一方，完全性検定に用いる残差計算は，距離・増分を扱いやすいENU座標系
+（East--North--Up，東・北・上の局所直交座標）で行うことが望ましい．
 
-\subsection{GeographicLibによるWGS84$\rightarrow$ENU（推奨）}
-可用状態S3が初めて成立した時刻の測位$(\varphi_0,\lambda_0,h_0)$を原点として設定し，各時刻の測位$(\varphi,\lambda,h)$をENUへ変換して$\,^{\texttt{enu}}\bm{p}_{\mathrm{gnss}}(t)$を得る．この方式は構成が単純であり，姿勢入力を必要としないため，実装・検証が容易である．
+なお，本研究ではENU座標を品質監視モジュール内部の計算にのみ使用し，
+RTAB-Mapへの入力は既存インタフェース互換性を優先して \texttt{NavSatFix} 形式のまま維持する．
 
-\subsection{navsat\_transform\_nodeの利用（代替）}
-ROS標準ノードを用いて\texttt{NavSatFix}をローカル座標へ変換する方法もある．ただし方位入力（IMUあるいはLIO由来yaw）と座標系整合の要件が増えるため，本研究では原則としてGeographicLib方式を採用する．
+GNSSの地理座標から局所ENUへの厳密変換には，
+GeographicLib\cite{ref:GeographicLib}等による楕円体モデルに基づく座標変換が広く用いられる．
+GeographicLibは高精度かつ汎用的であり，広範囲移動や標高変化を含む条件で特に有効である．
+しかし本研究の対象はハウス周辺の狭い走行範囲であり，
+さらに監視モジュールはRaspberry Pi 4B上で常時動作するため，
+依存ライブラリ追加を避けた実装を優先した．
+このため，完全性監視で必要な精度に対して十分と判断し，
+以下の短距離平面近似によるWGS84$\rightarrow$ENU変換を採用した．
 
-\section{RTAB-MapへのGNSS拘束注入と三値出力（Pass／Inflate／Drop）}
-\label{sec:rtabmap_injection}
-GNSSは後端グラフ最適化における\textbf{疎な全局拘束}として扱う．Supervisorの出力は，RTAB-Mapへ入力するGNSS拘束の取り扱いを三値で決定する．
-\begin{itemize}
-  \item \textbf{Pass}：\texttt{NavSatFix}をそのまま出力し，RTAB-Mapが通常重みで拘束として利用する．
-  \item \textbf{Inflate}：\texttt{position\_covariance}を$\alpha(t)$倍に拡大して出力し，拘束の重みを弱める（ソフト抑制）．
-  \item \textbf{Drop}：当該時刻のGNSSを出力しない（またはRTAB-Mapが無視できるフラグを付与する）ことで拘束注入を行わない（ハード抑制）．
-\end{itemize}
-これにより，利用不可・外れ値混入のGNSSが後端地図を汚染することを防止しつつ，大部分の高品質RTK拘束を最大限活用できる．
-
+原点$(\varphi_0,\lambda_0)$は，初期の高品質測位（例：RTK-FIXが連続し，
+可用性判定を満たす区間）から定め，
+以降は同一原点に対して一貫して変換を行う．
+地球半径$R$を用いて
+\begin{align}
+  x &\approx (\lambda-\lambda_0)\cos\varphi_0 \cdot R, \\
+  y &\approx (\varphi-\varphi_0)\cdot R
+\end{align}
+により局所座標$(x,y)$を得る．
+ここで$x$はEast，$y$はNorthに対応する．
+本研究の完全性監視は増分に基づくため，
+同一原点のもとで一貫して変換が行われる限り，数cm$\sim$数mスケールの局所運動に対して
+近似誤差は支配的とならない．
+ただし，走行範囲が大きくなる場合や高度差が無視できない場合には，
+楕円体モデルに基づく厳密変換（GeographicLib等）の導入が望ましい．
 
 \section{実験と評価}
-実験フィールド（信州大学農場ハウス）、使用したAGV、データ収集シナリオ
-（GNSS良好時、不良時、ハウス内外移動時）を詳細に記述する。
+\label{sec:exp_evaluation}
+本節では，実環境（信州大学農場のハウス内通路）で収集したROS~2 bagデータを用い，
+提案するGNSS品質監視（GNSS Supervisor）がRTAB-Mapの因子グラフ最適化に対する誤拘束注入リスクを低減し，
+地図整合性を改善できることを検証する．
+なお，本環境ではRTK-GNSSが安定して利用可能な時間帯が多い一方で，
+HMIは発生頻度が低く，再現性のある収集が困難であった．
+そこで本研究では，HMIが観測された走行ログをケーススタディとして詳細に解析し，
+品質監視の有効性を主として定性的に示す．
 
-評価に用いたGround Truthの定義（例：GNSS良好時の高精度軌跡、あるいは外部計測機器）を明確にする。
-\subsection{実験条件}
+\subsection{実験環境とデータ収集}
+\label{subsec:exp_setup}
+実験は信州大学農場のハウス内通路で実施し，AGVを走行させながら
+LiDAR点群，IMU，GNSS（\texttt{/fix}），および受信機状態量（例：測位状態，衛星数，DOP，RTCM age等）を
+ROS~2 bagとして同期記録した．
+収集後の解析は研究室環境でオフライン実行し，同一bagに対して各手法を適用した．
+実験環境の概観をFig.~\ref{fig:env_photos}に示す．
+
+% 環境写真（2枚並べ）
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/3/environment_1.jpg}
+    \caption{Experimental site overview (near the greenhouse field)}
+    \label{fig:env_photo_outside}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/3/environment_2.jpg}
+    \caption{Experimental site overview (inside the greenhouse)}
+    \label{fig:env_photo_inside}
+  \end{subfigure}
+  \caption{Experimental environment}
+  \label{fig:env_photos}
+\end{figure}
+
+\subsection{評価対象ログとHMIの観測}
+\label{subsec:hmi_observation}
+記録したGNSS観測（\texttt{/fix}）をFoxglove上で可視化したところ，
+本来連続であるべき走行軌跡に対し，短時間の不連続（ジャンプ／断裂）に相当する挙動が確認された．
+Fig.~\ref{fig:foxglove_hmi}に，異常挙動が観測された2日分（2025-10-23，2025-10-24）の例を示す．
+10/23のログでは走行途中で不自然な横方向の逸脱が現れており，本研究の評価対象ログとして用いる．
+一方，10/24のログでも同様の挙動が観測されたが，走行終盤での発生であり，
+以降の区間が短く最適化過程の比較に適さないため，本節では「同様の現象が複数日に渡って観測され得る」ことの補助的証拠として提示するに留める．
+なお，本研究では「受信機状態が良好に見える場合であっても測位が大きく偏る外れ値混入」をHMIとして扱うため，
+当該区間をHMIが疑われる区間として解析対象に設定した．
+
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/3/10_23.png}
+    \caption{2025-10-23: overview}
+    \label{fig:foxglove_1023_overview}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/3/10_23_0.png}
+    \caption{2025-10-23: zoomed view around the anomaly}
+    \label{fig:foxglove_1023_zoom}
+  \end{subfigure}
+
+  \vspace{2mm}
+
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/3/10_24.png}
+    \caption{2025-10-24: overview (reference only)}
+    \label{fig:foxglove_1024_overview}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/3/10_24_0.png}
+    \caption{2025-10-24: zoomed view around the anomaly}
+    \label{fig:foxglove_1024_zoom}
+  \end{subfigure}
+  \caption{Examples of GNSS trajectory discontinuities visualized in Foxglove (topic: \texttt{/fix})}
+  \label{fig:foxglove_hmi}
+\end{figure}
+
 \subsection{比較手法}
-比較手法: (1) LIO (+Wheel Odom) のみ、(2) LIO+Wheel+GNSSのナイーブな融合（品質無視）、(3) 提案手法（品質監視付き融合）の3つを用意する。
+\label{subsec:methods_compared}
+以下の3手法を比較する．いずれも同一のLiDAR/IMU入力を用い，RTAB-Mapの設定は可能な限り同一とした．
+\begin{enumerate}
+  \item \textbf{LIO only:} FAST-LIO2の相対オドメトリを用い，GNSS拘束を導入しない．
+  \item \textbf{Naive fusion:} GNSS品質を考慮せず，\texttt{/fix}をそのままRTAB-Mapの位置制約として導入する．
+  \item \textbf{Proposed:} 提案するGNSS Supervisorにより観測の採否（Accept/Reject）を判定し，
+        採用観測のみをRTAB-Mapに入力する．
+\end{enumerate}
 
-各シナリオのデータセットに対して3手法を適用し、得られた軌跡をGround Truthと比較する。
+\subsection{評価観点}
+\label{subsec:metrics}
+本ケーススタディでは外部計測機器による高精度Ground Truthが利用できないため，
+地図整合性および推定の破綻有無を中心に定性的評価を行う．具体的には，
+(i) 点群地図の幾何的一貫性（通路形状の崩れ，二重壁，ねじれ等），
+(ii) 推定軌跡の連続性と不自然な折れ曲がり，
+(iii) HMIが疑われる区間における推定の破綻・回復挙動，
+を比較する．
+また，提案法についてはReject判定のタイミングが異常区間と整合することを，
+NISと判定の時系列により確認する（\S\ref{subsec:timeline_response}）．
 
-結果の提示: (1) 軌跡比較図（Fig. 
-%\ref{fig:trajectory_comparison}
-）、
-(2) 定量評価指標（RMSE, 最大誤差など）の比較表（Table 
-%\ref{tab:localization_rmse}
-）を示す。
-\subsection{結果と考察}
-実験結果に基づき、
-提案手法(3)が比較手法(1)(2)に対して優位性を持つことを明確に論証する。
-特に、GNSS品質が悪化した際に、ナイーブ融合(2)が破綻するのに対し、提案手法(3)が安定して精度を維持できることを強調する。
+\subsection{実環境評価結果}
+\label{subsec:real_world_results}
+Fig.~\ref{fig:map_compare_three}に，各手法で生成された点群地図と推定軌跡を示す
+（白：点群地図，黄：推定軌跡）．
+Naive fusionではHMIが疑われる区間において誤ったGNSS拘束が因子グラフへ注入され，
+局所的な地図歪み（壁・通路形状の崩れ）が生じる場合が確認された．
+一方，Proposedでは当該区間のGNSS観測が遮断され，
+地図の一貫性が改善されることを確認した．
 
-GNSS品質監視モジュールの閾値設定などのパラメータの妥当性についても議論する
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}[t]{0.32\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/3/Only_LIO.png}
+    \caption{LIO only}
+    \label{fig:map_only_lio}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.32\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/3/LIO_HMI_FIX_all.png}
+    \caption{Naive fusion (with HMI)}
+    \label{fig:map_naive_hmi}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.32\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/3/LIO+proposed.png}
+    \caption{Proposed (GNSS Supervisor)}
+    \label{fig:map_proposed}
+  \end{subfigure}
+  \caption{Qualitative comparison of mapping results (white: point cloud map, yellow: estimated trajectory)}
+  \label{fig:map_compare_three}
+\end{figure}
+
+\subsection{HMI区間における挙動の詳細}
+\label{subsec:hmi_detail}
+HMIの影響をより明確に示すため，Naive fusionにおいて推定が不安定化した区間の例を
+Fig.~\ref{fig:map_naive_partial}に示す．
+本ログでは，異常区間の直後に局所的な歪みが生じたものの，
+後続区間で得られた整合的な観測およびループ閉合により，
+全体としては回復する挙動も観測された．
+しかし，この回復は常に保証されるものではなく，
+異常の大きさや注入タイミングによっては地図破綻が回復不能となる可能性がある．
+したがって，バックエンド汚染リスクを低減する観点からは，
+HMIが疑われる観測を事前に遮断し，最適化へ投入しないことが重要である．
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.75\linewidth]{figures/3/LIO_HMI_FIX_part.png}
+  \caption{Example of local distortion observed after the anomaly in naive fusion (partial view)}
+  \label{fig:map_naive_partial}
+\end{figure}
+
+\subsection{品質監視の時間応答}
+\label{subsec:timeline_response}
+提案法が異常区間をどのように検知し遮断したかを示すため，
+2025-10-23ログに対するNIS（中央値）と最終判定（PASS/FAIL）の時系列をFig.~\ref{fig:timeline_1023}に示す．
+図中の破線は判定閾値$\gamma_{\mathrm{pass}}$を表し，上部のバーは最終的な採否（Accept/Reject）を示す．
+異常区間ではNISが急増し，GNSS観測がRejectとして遮断されていることが分かる．
+また，NISが閾値未満であっても，可用性判定（例：fix品質，補助状態量の鮮度）や
+回復ロックアウトによりRejectとなる場合がある．
+本研究ではバックエンド最適化への誤拘束注入を最小化するため，
+このような保守的な判定方針を採用した．
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/3/timeline_1023.pdf}
+  \caption{Time history of the median NIS and the acceptance decision on the 2025-10-23 dataset. The dashed line indicates the threshold $\gamma_{\mathrm{pass}}$. The top bar shows the final PASS/FAIL decision (Accept/Reject). Note that GNSS updates can be rejected even when NIS is below the threshold due to availability checks (e.g., fix quality, auxiliary-data freshness) or recovery lockout, enforcing conservative integrity protection.}
+  \label{fig:timeline_1023}
+\end{figure}
+
+\subsection{考察}
+\label{subsec:discussion}
+本ケーススタディにより，実環境においてHMIが疑われるGNSS観測が発生し得ること，
+および品質監視により誤拘束の注入を抑制することで地図整合性が改善されることを確認した．
+一方で，本環境ではHMIの発生頻度が低く，統計的な再現実験を行うには追加の長時間収集が必要である．
+今後は，複数ログに対する再現性評価，および外部基準（既知基準点，測量，あるいは高精度参照軌跡）を用いた
+定量評価を課題とする．
 
 \end{document}
