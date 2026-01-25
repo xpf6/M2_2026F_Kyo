@@ -5,62 +5,91 @@
 
 \chapter{生育環境マッピング}
 本章では，開発したセンサユニットと位置推定システムを統合し，
-実際の圃場環境における生態情報の空間マッピングを行う．
+実際の圃場環境における生育情報の空間マッピングを行う．
 
 \section{マッピング手法と実験条件}
 本研究の最終目標は完全自律走行によるモニタリングであるが，
-データ取得した時点では自律走行アルゴリズムのロバスト性を検証中である．そのため，
-本章で報告する実験は，手動操作によりAGVを走行させてデータを取得したものである．
+データ取得時点では自律走行アルゴリズムのロバスト性を検証中である．
+そのため，本章で報告する実験は手動操作によりAGVを走行させてデータを取得した．
 本実験の主目的は，GNSS/LiDARによる高精度な位置情報と，
 非同期に取得される環境センサデータを正確に融合し，
-将来的な自律走行システムにおいて期待される環境マップ生成機能の有効性を実証することである．
+将来的な自律走行システムにおいて期待される環境マップ生成機能の有効性を示すことである．
 
 \section{データの同期と空間投影}
 具体的なデータ処理手順は以下の通りである．
 \begin{enumerate}
-    \item \textbf{データの同期:} 
-    センサユニットから取得された環境データ（スペクトル，CO$_2$，温湿度，気圧）に対し，タイムスタンプに基づいて最も近い位置情報（GNSS/LiDARオドメトリ）を割り当てる．
-    \item \textbf{データの正規化:} 
-    各環境データの微細な変動を視覚化するため，取得データの最小値および最大値を用いてカラーマップのダイナミックレンジを動的に調整する．
-    \item \textbf{可視化:} 
-    2次元平面（$XY$平面）上の軌跡としてプロットし，各地点におけるセンサ値を色情報として重畳表示する．
+    \item \textbf{データの同期:}
+    センサユニットから取得された環境データ（分光スペクトル，CO$_2$，温湿度，気圧）に対し，
+    タイムスタンプに基づいて最も近い自己位置（GNSS/LiDARオドメトリ）を割り当てる．
+
+    \item \textbf{正規化（表示のためのスケーリング）:}
+    本章のマップは微細な空間変動を視認しやすくすることを目的として，
+    取得データの範囲に基づきカラーマップの表示レンジを調整する．
+    ただし，これは視認性向上のための処理であり，絶対値の厳密比較は各センサの出力値に基づく．
+
+    \item \textbf{空間投影と可視化:}
+    2次元平面（$XY$平面）上の走行軌跡としてプロットし，
+    各地点におけるセンサ値を色情報として重畳表示する．
 \end{enumerate}
 
-\subsection{スペクトル特徴による植生検出}
-Fig.~\ref{fig:map_spectral}に示す分光データのピーク波長マップにおいて，
-軌跡上の色が頻繁に変化していることが確認できる．
-詳細に見ると，約550\,nm（緑色帯域）にピークを持つデータ点と，
-それ以外の波長帯域（青色や近赤外領域など）にピークを持つデータ点が混在している．
-これは，AGVが桑の木の下を通過した際には葉緑素による緑色反射が支配的になり，
-株間の土壌や空隙を通過した際には異なる反射特性が観測されたことを示唆している．
-この結果は，本システムが移動しながら，対象物の材質や植生の有無といった光学的な
-特徴を高分解能に識別可能であることを実証している．
+\subsection{分光スペクトル（288次元）の特徴抽出と空間マッピング}
+分光センサは各観測時刻$t_i$において288点のスペクトル$\bm{I}_i\in\mathbb{R}^{288}$を出力する．
+温湿度などのスカラー観測と異なり，スペクトルは高次元であるため，
+(1) 前処理，(2) 低次元特徴への射影，(3) 位置情報への同期と空間投影
+の3段階で環境マップへ変換する．
+
+まず，暗電流成分およびオフセットの影響を低減するための基線補正と平滑化を行い，
+さらにL1正規化により照度の一様な増減の影響を抑えた正規化スペクトル$\bm{s}_i$を得る．
+次に，植生・非植生の反射特性差を捉えるため，以下の特徴量を算出した．
+(i) NIR帯域とRed帯域の正規化差分（ND），
+(ii) スペクトル質心$\lambda_c$，
+(iii) 赤縁位置$\lambda_{\mathrm{RE}}$（導関数の最大点），
+(iv) 参照植生スペクトル$\bm{s}_{ref}$に対するスペクトル角$\theta$（SAM）である．
+各特徴量はタイムスタンプに基づき最も近い自己位置$\bm{p}(t_i)$へ対応付け，
+走行軌跡上に投影して空間分布として可視化する．
+
+\subsection{スペクトル特徴による植生・非植生の識別可能性}
+Fig.~\ref{fig:spec_feature_maps}は，288点分光データから抽出した特徴量の空間マップを示す．
+NDおよび赤縁位置は，植生に特徴的な「Red帯域での吸収とNIR帯域での高反射」，
+ならびに赤縁の立ち上がり（red-edge）を反映するため，
+土壌や空隙を含む領域との違いを比較的安定に表現できる．
+またSAMは，典型的な植生スペクトルとの類似度を連続量として与えるため，
+将来的に閾値処理やクラスタリングによる自動領域分割へ拡張しやすい．
+スペクトル質心はスペクトル形状全体の偏りを表す補助的指標であり，
+照明条件や材質差による全体的なシフトを把握するのに有効である．
+
+なお，従来の単純なピーク波長（Fig.~\ref{fig:map_spectral}）は探索的可視化として有用である一方，
+局所ノイズや照度条件の影響を受けやすい．
+本研究では，ピーク波長マップを直感的な参照として提示しつつ，
+主たる議論は上記の正規化に基づく特徴量マップにより行う．
 
 \subsection{微気象データの安定性と環境勾配}
 環境センサ（温度・湿度・CO$_2$・気圧）のマッピング結果（Fig.~\ref{fig:map_temp}--\ref{fig:map_pressure}）について考察する．
 本実験は通気性の高い開放型ハウスで実施されたため，ハウス内外での巨視的な環境差は極めて小さい条件下であった．
-それにもかかわらず，データの正規化表示により，以下の微細な環境特性が明らかになった．
+それにもかかわらず，空間投影により以下の微細な環境特性が確認できた．
 
 \begin{itemize}
     \item \textbf{温度と湿度の逆相関:}
-    Fig.~\ref{fig:map_temp}（温度）とFig.~\ref{fig:map_humidity}（湿度）を比較すると，温度が高いエリアでは湿度が相対的に低く，温度が低いエリアでは湿度が高いという，物理法則（空気線図）に整合する\textbf{逆相関}が明瞭に観測された．
-    これは，提案センサシステムがノイズに埋もれることなく，わずかな物理的変動を空間分布として捉えられていることを示している．
-    
+    Fig.~\ref{fig:map_temp}（温度）とFig.~\ref{fig:map_humidity}（湿度）を比較すると，
+    温度が高いエリアでは湿度が相対的に低く，温度が低いエリアでは湿度が高いという，
+    物理法則（空気線図）に整合する逆相関が観測された．
+    これは提案システムが，ノイズに埋もれやすい微小な変動を空間分布として捉えられていることを示す．
+
     \item \textbf{CO$_2$濃度の空間勾配:}
-    Fig.~\ref{fig:map_co2}に示すように，CO$_2$濃度はおおよそ400～510\,ppmの範囲で推移した．
+    Fig.~\ref{fig:map_co2}に示すように，CO$_2$濃度は概ね400--510\,ppmの範囲で推移した．
     特に，ハウス奥側（図の上部ループ付近）において濃度が高まる傾向が見られる．
-    これは，換気の影響が届きにくい領域での空気の滞留や，植生による局所的な呼吸の影響を捉えている可能性がある．
+    これは換気の影響が届きにくい領域での空気の滞留，あるいは植生による局所的な呼吸の影響を捉えている可能性がある．
 \end{itemize}
 
-以上の結果より，提案システムは，GNSS信号と環境センサデータを高精度に統合し，圃場内の空間的な環境マップを生成する能力を有していることが確認された．
-本実験は手動走行によるものであったが，得られたマップの品質は，自律走行システムに統合された際にも同様に高精細な環境モニタリングが可能であることを示唆する期待通りの結果（expected result）である．
+以上より，提案システムは自己位置推定と環境センサデータを統合し，
+圃場内の空間的な環境マップを生成できることが確認された．
+本章のデータは手動走行により取得したが，
+同一の処理系は自律走行時にも適用可能であり，
+走行しながら高精細な環境モニタリングを行えることを示唆する．
 
-
-
-\section{生成された生態環境マップ}
-
+\section{生成された生育環境マップ}
 10月23日に収集したデータセットに基づき生成された各種環境マップを以下に示す．
-実験当日の天候は晴れであり，ハウスの側面は換気のため開放された状態であった．
+実験当日の天候は晴れであり，ハウス側面は換気のため開放された状態であった．
 
 % --- Temperature & Humidity ---
 \begin{figure}[htbp]
@@ -98,19 +127,63 @@ Fig.~\ref{fig:map_spectral}に示す分光データのピーク波長マップ�
     \end{minipage}
 \end{figure}
 
-% --- Spectral peak wavelength ---
+% --- Spectral feature maps (2x2) ---
+% NOTE: Require \usepackage{subcaption} in the main preamble.
+\begin{figure}[htbp]
+  \centering
+
+  \begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/5/bag_20251023_112054_agri_xy_spec_ndnr.pdf}
+    \subcaption{ND(NIR, Red) map.}
+    \label{fig:spec_ndnr}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/5/bag_20251023_112054_agri_xy_spec_centroid.pdf}
+    \subcaption{Spectral centroid map.}
+    \label{fig:spec_centroid}
+  \end{subfigure}
+
+  \vspace{0.6em}
+
+  \begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/5/bag_20251023_112054_agri_xy_spec_rededge.pdf}
+    \subcaption{Red-edge position map.}
+    \label{fig:spec_rededge}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/5/bag_20251023_112054_agri_xy_spec_sam_leaf.pdf}
+    \subcaption{SAM similarity to vegetation reference.}
+    \label{fig:spec_sam}
+  \end{subfigure}
+
+  \caption{Spatial maps of spectral features extracted from 288-band measurements.
+  Normalized spectral features enable robust comparison under illumination changes and provide interpretable indicators for vegetation/non-vegetation discrimination along the trajectory.}
+  \label{fig:spec_feature_maps}
+\end{figure}
+
+% --- Spectral peak wavelength (exploratory) ---
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.7\textwidth]{figures/5/bag_20251023_112054_agri_xy_peaklambda.pdf}
-    \caption{Spectral peak wavelength map (nm).
-    Frequent colour changes along the trajectory reflect differences in reflectance characteristics between vegetation (greenish regions) and soil or gaps (bluish regions).}
+    \includegraphics[width=0.75\textwidth]{figures/5/bag_20251023_112054_agri_xy_peaklambda.pdf}
+    \caption{Spectral peak wavelength map (nm) as an exploratory visualization.
+    Frequent color changes along the trajectory indicate spectral variability caused by material differences and illumination conditions.}
     \label{fig:map_spectral}
 \end{figure}
 
-\clearpage
 
 \section{考察}
-
-
+本章では，走行しながら取得された環境センサデータを自己位置推定結果へ同期し，
+圃場内の空間分布として可視化できることを示した．
+特に分光データに対しては，288次元スペクトルを正規化した上で，
+植生に関連する特徴量（ND，赤縁位置）および類似度指標（SAM）を用いて空間マップへ投影することで，
+単一ピークに依存しない，より頑健で解釈可能な生育環境マッピングが可能であることを確認した．
+今後は，自律走行系と統合した長時間計測や，
+栅格地図への集約・統計処理による安定化を行い，定量評価を拡充する予定である．
 
 \end{document}

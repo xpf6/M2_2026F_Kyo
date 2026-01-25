@@ -9,11 +9,12 @@
 RTK-GNSSの測位品質が遮蔽・マルチパス・差分補正途絶等により間欠的に変動する課題に対処するため，
 LiDAR--Inertial Odometry（LIO）とRTK-GNSSを統合した自己位置推定系を構築する．
 特に，受信機状態量に基づく可用性判定と，LIOとの短時間増分整合性に
-基づく完全性監視（Integrity Monitoring）を組み合わせ，見かけ上は高品質（小共分散）でありながら
-実際には大きく偏る誤測位（HMI: Hazardously Misleading Information）を抑制する
+基づく完全性監視（Integrity Monitoring）の考え方を援用し，
+見かけ上は高品質（小共分散，RTK-FIX相当の状態）であっても，
+遮蔽・マルチパスに起因するNLOS（Non-Line-of-Sight）環境下で大きく偏り得る誤測位（大偏差外れ値）を抑制する
 GNSS品質監視モジュール（GNSS Supervisor）を提案する．
 提案手法は，バックエンドのグラフ最適化に投入するGNSS制約をオンラインに選別・重み付け調整し，
-長時間走行における自己位置推定の安定性向上を目的とする．
+長時間走行における自己位置推定の安定性向上を目的とする
 
 \section{システム構成}
 \label{sec:system_overview}
@@ -152,17 +153,20 @@ RTAB-Mapを採用した理由は，（i）ループ閉合に基づく長期ド�
   \item \textbf{GNSS利用不可能}\\
   no-fix，使用衛星数不足，差分補正の途絶（RTCM ageの増大）等により，
   測位が成立しない，あるいは測定として利用できない状態である．これは測定欠落に相当する．
-  \item \textbf{危険な誤誘導情報（HMI: Hazardously Misleading Information）／外れ値混入}\\
-  受信機はRTK-FIX等の状態を報告し，共分散も小さいにもかかわらず，実際の測位が大きく偏り，
-  推定軌跡に不連続な位置の飛び（位置ジャンプ）を生じる状態である．本研究の焦点は，
-  この見かけ上は良好だが誤っている測位の抑制にある．
+  \item \textbf{NLOS／マルチパス起因の大偏差外れ値混入}\\
+  受信機がRTK-FIX等の状態を報告し，共分散も小さいにもかかわらず，
+  遮蔽・マルチパスに起因するNLOS環境下で実際の測位が大きく偏り，
+  推定軌跡に不連続な位置の飛び（位置ジャンプ）や断裂を生じる状態である．
+  本研究の焦点は，この見かけ上は良好だが誤っている測位外れ値の抑制にある．
   \item \textbf{LIOの幾何学的退化（LiDARデジェネラシー）と不整地擾乱}\\
   ハウス内通路等では点群幾何が単調となり，可観測性が低下してLIOが退化し得る．
   また不整地では車輪スリップが顕著であり，実験では，Wheel Odometryは自己位置推定源としては不適切と判断した．
 \end{enumerate}
 
-本研究の目的は，GNSSが高精度だが，利用不可が間欠的に発生し，まれにHMIが出現する統計的特性をもつ状況下で，
-後端のグラフ最適化を汚染しないことを最優先としつつ，
+本研究の目的は，GNSSが高精度に利用可能な時間帯が多い一方で，
+遮蔽・マルチパス・補正途絶に起因して利用不可が間欠的に発生し，
+まれにNLOS由来の大偏差外れ値が混入する統計的特性をもつ状況下で，
+バックエンドのグラフ最適化を汚染しないことを最優先としつつ，
 高品質RTK拘束によりLIOの長期ドリフトを抑制する統合推定系を構築することである．
 そのために，後端へ注入するGNSS拘束をオンラインで選別する品質監視モジュールを設計する．
 
@@ -172,8 +176,8 @@ RTAB-Mapを採用した理由は，（i）ループ閉合に基づく長期ド�
 本研究では，RTAB-Map に導入される GNSS 制約が因子グラフ最適化の結果を劣化させないことを最優先課題とし，
 GNSS観測をオンラインで選別する GNSS 品質監視モジュールを設計した．
 農業用ハウス環境において，RTK-GNSS は多くの時間帯で高精度に利用可能である一方，
-遮蔽，マルチパス，および差分補正の途絶に起因して，まれに HMI を含む観測が発生する可能性がある．
-このとき，誤拘束が1サンプルでもRTAB-Map注入されると，地図作成に劣化を引き起こす場合がある．
+遮蔽，マルチパス，および差分補正の途絶に起因して，NLOS環境下の大偏差外れ値が混入する可能性がある．
+このとき，誤拘束が1サンプルでもRTAB-Mapへ注入されると，地図作成に劣化を引き起こす場合がある．
 したがって本研究では，GNSS出力の重みを段階的に調整するのではなく，
 採用または遮断によってRTAB-Mapへの拘束注入を制御する．
 
@@ -189,7 +193,9 @@ GNSS観測をオンラインで選別する GNSS 品質監視モジュールを�
   \item \textbf{Reject（遮断）}: 観測をRTAB-Mapへ注入しない，または固定の大きな対角共分散へ置換し，拘束として確実に無効化する．
 \end{itemize}
 
-HMIが共分散を過小に偽装し得る点を踏まえ，本研究では遮断時に倍率拡大による重み調整へ依存せず，
+NLOS／マルチパス環境下では，受信機が共分散を過小評価して報告する場合があり，
+単純な倍率拡大による重み調整に依存すると誤拘束が残存し得る．
+そこで本研究では遮断時に倍率拡大へ依存せず，
 固定値の対角共分散により拘束を確実に無効化する実装とした．具体的には，遮断時の出力共分散を
 $\mathrm{diag}(C_{\mathrm{blk}},C_{\mathrm{blk}},C_{\mathrm{blk}})$とし，
 $C_{\mathrm{blk}}$は十分大きい定数（例：$99999$）として設定する．
@@ -221,7 +227,8 @@ Availability gateのみで妥当性を確認した上で暫定的に採用する
 
 \subsection{完全性監視：短時間増分整合性に基づく遮断判定}
 \label{subsec:integrity_gate}
-完全性監視は，受信機状態が良好に見えるにもかかわらず外れ値を含むHMIを抑制するための機構である．
+完全性監視は，受信機状態が良好に見えるにもかかわらず，
+遮蔽・マルチパスに起因するNLOS環境下で外れ値を含む誤測位が混入する状況を抑制するための機構である．
 本研究では絶対位置の一致を仮定せず，短時間窓$\Delta T$の位置増分を比較する．
 時刻$t$におけるGNSS位置（ENU）を$\bm{p}_{\mathrm{gnss}}(t)$，
 LIOオドメトリを$\bm{p}_{\mathrm{lio}}(t)$とし，
@@ -240,25 +247,27 @@ LIO側は等方近似$\Sigma_{\mathrm{lio}}=\sigma_{\mathrm{lio}}^{2}\bm{I}$を�
 \end{equation}
 を計算し，$d(t)$が閾値$\gamma$を超える場合にRejectとする．
 
-ここで，HMIによる過小共分散偽装に対して検定が過敏化しないよう，
+ここで，NLOSによる過小共分散偽装に対して検定が過敏化しないよう，
 $\Sigma_{\mathrm{gnss}}$の対角要素には下限値（covariance floor）を与える．
 さらに，判定のチャタリングを避けるため，
 $d(t)$に短い履歴の中央値フィルタを適用し，
 連続不合格が一定回数に達した場合にRejectを維持する（ヒステリシス）．
 
-\subsection{HMI開始直後の1サンプル注入を防ぐ設計}
+\subsection{NLOS外れ値発生直後の1サンプル注入を防ぐ設計}
 \label{subsec:first_frame_block}
 増分整合性検定は窓幅や履歴処理を伴うため，原理的に検知遅延が生じ得る．
-しかし HMI においては，攻撃開始直後の最初の観測がバックエンド最適化へ注入されるだけで，
-地図推定結果が回復不能となる場合がある．
-そこで本研究では，HMI開始直後の 1 サンプル目を確実に遮断することを目的として，
+しかしNLOS由来の大偏差外れ値においては，
+異常発生直後の最初の観測がバックエンド最適化へ注入されるだけで，
+地図推定結果が大きく損なわれる場合がある．
+そこで本研究では，外れ値発生直後の 1 サンプル目を確実に遮断することを目的として，
 以下の二つの機構を組み合わせた．
+
 
 (1) \textbf{即時遮断ルール}：
 GNSS が極端に小さい共分散，すなわち過剰な信頼度を報告している場合に限り，
 増分残差のノルム $\|\bm{r}(t)\|$ が微小閾値 $r_{\mathrm{tw}}$ を超えた瞬間に，
 当該観測を遮断と判定する．
-本規則は，小共分散かつ系統的偏りを伴うHMI に対して，
+本規則は，小共分散かつ系統的偏りを伴うNLOS外れ値に対して，
 同一サンプルでの即時遮断を実現することを目的としている．
 
 (2) \textbf{1 サンプル遅延による決定後出力}： 
@@ -266,7 +275,7 @@ GNSS が極端に小さい共分散，すなわち過剰な信頼度を報告し
 次サンプル $t+\delta$ において得られた判定結果が Reject であった場合には，
 バッファされていた時刻 $t$ の観測を破棄する．
 この処理により，窓検定に起因する検知遅延が存在する場合であっても，
-攻撃開始直後の最初の観測がバックエンド最適化へ注入される確率を低減できる．
+外れ値発生直後の最初の観測がバックエンド最適化へ注入される確率を低減できる．
 本研究では，地図破綻リスクの低減を最優先とし，
 1 サンプル分のレイテンシ増加を許容した．
 
@@ -313,8 +322,8 @@ GeographicLibは高精度かつ汎用的であり，広範囲移動や標高変�
 提案するGNSS品質監視（GNSS Supervisor）がRTAB-Mapの因子グラフ最適化に対する誤拘束注入リスクを低減し，
 地図整合性を改善できることを検証する．
 なお，本環境ではRTK-GNSSが安定して利用可能な時間帯が多い一方で，
-HMIは発生頻度が低く，再現性のある収集が困難であった．
-そこで本研究では，HMIが観測された走行ログをケーススタディとして詳細に解析し，
+遮蔽・マルチパスに起因する明確なNLOS外れ値は発生頻度が低く，再現性のある収集が困難であった．
+そこで本研究では，NLOS由来の測位逸脱が疑われる走行ログをケーススタディとして詳細に解析し，
 品質監視の有効性を主として定性的に示す．
 
 \subsection{実験環境とデータ収集}
@@ -345,16 +354,17 @@ ROS~2 bagとして同期記録した．
   \label{fig:env_photos}
 \end{figure}
 
-\subsection{評価対象ログとHMIの観測}
-\label{subsec:hmi_observation}
+\subsection{評価対象ログとNLOS起因の測位逸脱の観測}
+\label{subsec:nlos_observation}
 記録したGNSS観測（\texttt{/fix}）をFoxglove上で可視化したところ，
 本来連続であるべき走行軌跡に対し，短時間の不連続（ジャンプ／断裂）に相当する挙動が確認された．
-Fig.~\ref{fig:foxglove_hmi}に，異常挙動が観測された2日分（2025-10-23，2025-10-24）の例を示す．
+Fig.~\ref{fig:foxglove_nlos}に，異常挙動が観測された2日分（2025-10-23，2025-10-20）の例を示す．
 10/23のログでは走行途中で不自然な横方向の逸脱が現れており，本研究の評価対象ログとして用いる．
-一方，10/24のログでも同様の挙動が観測されたが，走行終盤での発生であり，
+一方，10/20のログでも同様の挙動が観測されたが，走行終盤での発生であり，
 以降の区間が短く最適化過程の比較に適さないため，本節では「同様の現象が複数日に渡って観測され得る」ことの補助的証拠として提示するに留める．
-なお，本研究では「受信機状態が良好に見える場合であっても測位が大きく偏る外れ値混入」をHMIとして扱うため，
-当該区間をHMIが疑われる区間として解析対象に設定した．
+なお，本研究では，当該不連続が遮蔽・マルチパスに起因するNLOS外れ値（受信機状態が一見良好でも測位が大きく偏る事象）として現れ得る点に着目し，
+当該区間をNLOS由来の測位逸脱が疑われる区間として解析対象に設定した．
+
 
 \begin{figure}[t]
   \centering
@@ -376,19 +386,19 @@ Fig.~\ref{fig:foxglove_hmi}に，異常挙動が観測された2日分（2025-10
 
   \begin{subfigure}[t]{0.49\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/3/10_24.png}
-    \caption{2025-10-24: overview (reference only)}
-    \label{fig:foxglove_1024_overview}
+    \includegraphics[width=\linewidth]{figures/3/10_20.png}
+    \caption{2025-10-20: overview (reference only)}
+    \label{fig:foxglove_1020_overview}
   \end{subfigure}
   \hfill
   \begin{subfigure}[t]{0.49\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/3/10_24_0.png}
-    \caption{2025-10-24: zoomed view around the anomaly}
-    \label{fig:foxglove_1024_zoom}
+    \includegraphics[width=\linewidth]{figures/3/10_20_0.png}
+    \caption{2025-10-20: zoomed view around the anomaly}
+    \label{fig:foxglove_1020_zoom}
   \end{subfigure}
   \caption{Examples of GNSS trajectory discontinuities visualized in Foxglove (topic: \texttt{/fix})}
-  \label{fig:foxglove_hmi}
+  \label{fig:foxglove_nlos}
 \end{figure}
 
 \subsection{比較手法}
@@ -407,7 +417,7 @@ Fig.~\ref{fig:foxglove_hmi}に，異常挙動が観測された2日分（2025-10
 地図整合性および推定の破綻有無を中心に定性的評価を行う．具体的には，
 (i) 点群地図の幾何的一貫性（通路形状の崩れ，二重壁，ねじれ等），
 (ii) 推定軌跡の連続性と不自然な折れ曲がり，
-(iii) HMIが疑われる区間における推定の破綻・回復挙動，
+(iii) NLOS由来の測位逸脱が疑われる区間における推定の破綻・回復挙動，
 を比較する．
 また，提案法についてはReject判定のタイミングが異常区間と整合することを，
 NISと判定の時系列により確認する（\S\ref{subsec:timeline_response}）．
@@ -416,7 +426,7 @@ NISと判定の時系列により確認する（\S\ref{subsec:timeline_response}
 \label{subsec:real_world_results}
 Fig.~\ref{fig:map_compare_three}に，各手法で生成された点群地図と推定軌跡を示す
 （白：点群地図，黄：推定軌跡）．
-Naive fusionではHMIが疑われる区間において誤ったGNSS拘束が因子グラフへ注入され，
+Naive fusionではNLOS由来の測位逸脱が疑われる区間において誤ったGNSS拘束が因子グラフへ注入され，
 局所的な地図歪み（壁・通路形状の崩れ）が生じる場合が確認された．
 一方，Proposedでは当該区間のGNSS観測が遮断され，
 地図の一貫性が改善されることを確認した．
@@ -432,9 +442,9 @@ Naive fusionではHMIが疑われる区間において誤ったGNSS拘束が因�
   \hfill
   \begin{subfigure}[t]{0.32\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/3/LIO_HMI_FIX_all.png}
-    \caption{Naive fusion (with HMI)}
-    \label{fig:map_naive_hmi}
+    \includegraphics[width=\linewidth]{figures/3/LIO_NLOS_FIX_all.png}
+    \caption{Naive fusion (with NLOS-induced GNSS outliers)}
+    \label{fig:map_naive_nlos}
   \end{subfigure}
   \hfill
   \begin{subfigure}[t]{0.32\linewidth}
@@ -447,9 +457,9 @@ Naive fusionではHMIが疑われる区間において誤ったGNSS拘束が因�
   \label{fig:map_compare_three}
 \end{figure}
 
-\subsection{HMI区間における挙動の詳細}
-\label{subsec:hmi_detail}
-HMIの影響をより明確に示すため，Naive fusionにおいて推定が不安定化した区間の例を
+\subsection{NLOS疑い区間における挙動の詳細}
+\label{subsec:NLOS_detail}
+NLOS由来の外れ値の影響をより明確に示すため，Naive fusionにおいて推定が不安定化した区間の例を
 Fig.~\ref{fig:map_naive_partial}に示す．
 本ログでは，異常区間の直後に局所的な歪みが生じたものの，
 後続区間で得られた整合的な観測およびループ閉合により，
@@ -457,11 +467,11 @@ Fig.~\ref{fig:map_naive_partial}に示す．
 しかし，この回復は常に保証されるものではなく，
 異常の大きさや注入タイミングによっては地図破綻が回復不能となる可能性がある．
 したがって，バックエンド汚染リスクを低減する観点からは，
-HMIが疑われる観測を事前に遮断し，最適化へ投入しないことが重要である．
+NLOS由来の外れ値が疑われる観測を事前に遮断し，最適化へ投入しないことが重要である．
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.75\linewidth]{figures/3/LIO_HMI_FIX_part.png}
+  \includegraphics[width=0.75\linewidth]{figures/3/LIO_NLOS_FIX_part.png}
   \caption{Example of local distortion observed after the anomaly in naive fusion (partial view)}
   \label{fig:map_naive_partial}
 \end{figure}
@@ -486,9 +496,9 @@ HMIが疑われる観測を事前に遮断し，最適化へ投入しないこ�
 
 \subsection{考察}
 \label{subsec:discussion}
-本ケーススタディにより，実環境においてHMIが疑われるGNSS観測が発生し得ること，
+本ケーススタディにより，実環境においてNLOS由来の測位逸脱が疑われるGNSS観測が発生し得ること，
 および品質監視により誤拘束の注入を抑制することで地図整合性が改善されることを確認した．
-一方で，本環境ではHMIの発生頻度が低く，統計的な再現実験を行うには追加の長時間収集が必要である．
+一方で，本環境ではNLOSの発生頻度が低く，統計的な再現実験を行うには追加の長時間収集が必要である．
 今後は，複数ログに対する再現性評価，および外部基準（既知基準点，測量，あるいは高精度参照軌跡）を用いた
 定量評価を課題とする．
 

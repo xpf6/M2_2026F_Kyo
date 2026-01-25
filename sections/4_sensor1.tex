@@ -12,8 +12,10 @@
 一方，本研究で使用する浜松ホトニクス製ミニ分光器C12880MAは，外部クロックに同期して出力が更新されるため，
 割込み駆動に基づく一般的な取得方式では高周波領域で取得欠落やタイミングずれが生じやすい．
 そこで本研究では，割込み駆動方式の限界を再現的に示した上で，
-タイマ・ADC・DMAをハードウェアトリガで連鎖させ，さらにC12880MA固有の競合状態を回避する
-デュアルスイッチFSMアーキテクチャを設計・実装した．
+タイマを用いてC12880MAのCLKを連続生成し，TRGに同期したハードウェアトリガでADC変換を駆動し，
+DMAにより画素列をストリーミング取得するアーキテクチャを設計・実装した．
+さらに，ST立下り後のソフトウェア起動遅延を実測により定量化し，有効画素ウィンドウの補正として取り込むことで，
+\SI{5}{\mega\hertz}級の安定取得を実現した．
 提案手法はSTM32F446RE（F4シリーズ）およびSTM32H723ZG（H7シリーズ）に実装し，
 最終的に\SI{5}{\mega\hertz}での連続取得を実証した．
 
@@ -106,6 +108,25 @@ C12880MAセンサは，入力ST信号立下り後にTRG信号を出力し，
   \label{fig:c12880ma_timing}
 \end{figure}
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.98\linewidth]{figures/4/c12880ma_pixel_index_mapping.pdf}
+  \caption{C12880MA readout rule and pixel index mapping between sensor-side definition and DMA buffer in this work. 
+  The sensor pixel index is defined from the falling edge of ST (\(t=0\)), where pixels \#1--\#88 are dark/invalid and pixels \#89--\#376 are valid (288 pixels). 
+  Due to software start latency, sensor pixels \#1--\#4 are not captured; therefore, the nominal valid start at sensor pixel \#89 appears at DMA buffer sample \#85.}
+  \label{fig:c12880ma_readout_rule}
+\end{figure}
+
+Fig.~\ref{fig:c12880ma_readout_rule}に，本研究で用いる画素番号の定義と，
+センサ側インデックスとDMAバッファ上のサンプル番号の対応関係を示す．
+本研究ではST信号の立下りを\(t=0\)とし，ST立下り後の第1画素を\#1として画素番号を定義する．
+データシートの読出規則では，\#1--\#88は暗画素（無効画素）であり，\#89--\#376が有効画素（288画素）である．
+一方，実装ではST立下り後にADC/DMAをソフトウェアで開始するため起動遅延が生じ，
+センサ側の\#1--\#4に相当するサンプルが取得できないことを実測により確認した．
+その結果，有効画素開始（センサ側\#89）はDMAバッファ上では\#85として観測されるため，
+本研究ではDMAバッファの\#85--\#372（288サンプル）を有効分光データとして採用する．
+なお，EOS信号は読出終端タイミングの検証に用い，現実装ではDMA転送は固定長（\(N=387\)）で終了する．
+
 \subsection{従来方式の再検証}
 \label{subsec:reconfirm_limit}
 本研究では，内部ADCが比較的高速なSTM32F446REを用いて従来方式の制約を再検証した．
@@ -129,68 +150,62 @@ DMAを併用してCPU負荷を低減した場合でも\SI{130}{\kilo\hertz}程�
     \end{tabular}
 \end{table}
 
-\section{提案手法：デュアルスイッチFSMアーキテクチャ}
-\label{sec:new_architecture}
-割り込み遅延を排除するため，タイマ・ADC・DMAをハードウェアトリガで直結し，
-周期イベントに対してCPUが介在しないデータパス（Timer$\rightarrow$TRGO$\rightarrow$ADC$\rightarrow$DMA）
-を構成することが本質的に必要である．
-一方，C12880MAはTRG信号が外部クロックのミラーとして常時出力されるため，
-単純にADCを待機（armed）状態にすると，積分期間中に誤トリガが発生し得る．
-本節では，この競合状態をハードウェアレベルで解消するためのデュアルスイッチFSMを提案する．
+\section{提案手法：連続CLK下でのST制御とTRG同期ハードウェア取得}
+\label{sec:proposed_chain}
+本研究では，CLKを停止・再開することなく連続供給し，
+ST信号により積分区間を定義した上で，ST立下り後に読出を開始するC12880MAの基本動作に整合する形で取得系を構成した．
+\SI{5}{\mega\hertz}級の周期イベントに対してソフトウェア割込み処理を介在させると，
+起動遅延および処理時間ばらつき（jitter）が不可避となるため，
+本研究ではTRG同期のハードウェアトリガを用いてADC変換を駆動し，
+DMAにより画素列をストリーミング転送することで，サンプリング位相の決定性を確保する．
 
-\subsection{C12880MA駆動における競合状態}
-\label{subsec:flying_start}
-C12880MAのTRG信号はCLK信号に同期して生成されるため，CLKが供給される限りTRGも連続的に出力され続ける．
-本研究で意図する制御フローは，(i) ST=HIGHで積分を行い，(ii) ST=LOWへ遷移後に読出を開始する，である．
-しかし積分期間中にADCをDMA待機状態に設定している場合，
-常時入力されるTRGによりADCが即座に誤トリガし，
-ST=HIGH期間に相当する無効データがDMAバッファへ書き込まれる．
-この現象は，読出開始前にデータフローが先行して開始されることから，
-本章ではフライングスタートと呼ぶ．
+\subsection{フレーム取得シーケンス（ST制御とDMAストリーミング）}
+\label{subsec:acq_sequence}
+1フレームの取得は次の手順で構成される．
+(i) STをHighに設定して積分を開始し，所定の積分時間\(T_{\mathrm{int}}\)を保持する．
+(ii) STをLowへ遷移させて積分を終了し，直後にADCをDMAモードで開始する．
+(iii) 以降はTRG立上りに同期してADC変換が自動的に実行され，DMAによりバッファへ連続転送される．
+(iv) DMA転送完了コールバックによりフレーム完了を検知し，次フレーム準備としてSTをHighへ戻す．
+この構成により，高周波領域においても各サンプルの時刻はTRG（ハードウェアイベント）により規定され，
+CPU介在はフレーム境界（開始/完了）に限定される．
 
-\subsection{デュアルスイッチ設計}
-\label{subsec:dual_switch}
-上記問題を回避するため，2つの独立したハードウェア制御要素によりデータフローを厳密に制御する．
+\subsection{TIM--ADC--DMAの連携機構}
+\label{subsec:tim_adc_dma_link}
+図\ref{fig:c12880ma_timing}に示すように，C12880MAはCLKに同期してTRGを生成する．
+本研究では，汎用タイマ（TIM2）のPWM出力によりCLKを生成し，
+別タイマ（TIM15）でTRGエッジを取り込み，そのイベントをADCの外部トリガとして用いる．
+ADCは外部トリガ入力により変換を開始し，変換結果はDMAによりメモリへ逐次転送されるため，
+TRG周期に同期した一様なサンプリングがCPUの介在なしに実行される．
 
-\subsubsection{スイッチ1：CLK信号のオン・オフ制御}
-\label{subsubsec:switch_clk}
-第1のスイッチはTRG信号源であるCLKを制御する．
-汎用タイマ（例：TIM4）のPWM出力によりCLKを生成し，
-PWM開始・停止操作によりCLK（ひいてはTRG）を任意の時刻でオン・オフ制御する．
-これにより，ADCを待機状態へ移行するタイミングにおいて，TRG信号の存在そのものを排除できる．
+重要なのは，ADC変換の開始条件が「ソフトウェア呼出」ではなく「TRGエッジ」により決まる点である．
+これにより，ISR内処理やタスクスケジューリングに起因する遅延・ばらつきが
+サンプリング位相へ直接投影されることを抑制し，
+\SI{5}{\mega\hertz}級の連続取得においてもタイミング決定性を維持できる．
 
-\subsubsection{スイッチ2：BKINによるトリガ経路ゲーティング}
-\label{subsubsec:switch_bkin}
-第2のスイッチはADCへのトリガ経路を遮断するゲート機構である．
-制御タイマ（例：TIM1）をADCトリガ生成に用い，C12880MAのST信号をTIM1のBKINピンへ入力する．
-BKIN極性をアクティブ・ハイに設定することで，ST=HIGH（積分期間）ではブレーキが即時に有効となり，
-TRGO（ADCトリガ出力）がハードウェアレベルで遮断される．
-ST=LOW（読出期間）に遷移するとブレーキが解除され，TRGOが許可される．
-この仕組みにより，積分期間中にTRGが存在していてもADCが誤トリガされない．
+\subsection{ST立下り後の開始遅延と有効画素ウィンドウ補正}
+\label{subsec:effective_pixel_window}
+C12880MAのデータシートでは，ST立下り後の所定回数（89回）のTRGを経てVIDEOが有効化される．
+一方，本実装ではST立下り後にADC/DMAを開始するため，
+ST遷移からDMA開始までのソフトウェア起動遅延が，画素列上の開始位置に固定オフセットとして現れる．
 
-\subsection{FSMによる制御フロー}
-\label{subsec:fsm_flow}
-デュアルスイッチ設計に基づき，状態遷移により確実な制御を行う．
-さらに制御手順をAlgorithm~\ref{alg:dual_switch_fsm}にまとめる．
+本研究環境では，このオフセットはTRG周期換算で約4画素分に相当することが実測により一貫して確認された．
+そのため，DMAバッファ上で有効画素が安定して出現する位置は理論値（89番目）ではなく，
+およそ85番目付近となる．本研究ではこの挙動を系統的な固定遅延として扱い，
+先頭85画素を無効画素として除外することで，有効スペクトルデータを安定に抽出した．
 
-\begin{algorithm}[t]
-\caption{C12880MA frame acquisition using a dual-switch FSM}
-\label{alg:dual_switch_fsm}
-\begin{algorithmic}[1]
-\State \textbf{State} $\gets$ \textsc{Idle}
-\State ST $\gets$ LOW; CLK(PWM) $\gets$ OFF; ADC $\gets$ STOP
-\State \textbf{State} $\gets$ \textsc{Arm}
-\State Start ADC with DMA (armed, waiting for trigger)
-\State \textbf{State} $\gets$ \textsc{Integration}
-\State Set ST $\gets$ HIGH (BKIN asserted; TRGO gated)
-\State Start CLK(PWM) $\gets$ ON
-\State Wait for integration time $T_{\mathrm{int}}$
-\State \textbf{State} $\gets$ \textsc{Readout}
-\State Set ST $\gets$ LOW (BKIN released; TRGO enabled)
-\State ADC sampling is triggered by the next TRG edge; DMA transfers samples to buffer
-\State \textbf{On DMA completion callback:} stop CLK(PWM); stop ADC; \textbf{State} $\gets$ \textsc{Idle}
-\end{algorithmic}
-\end{algorithm}
+\subsection{割り込み負荷を伴うシステムへの拡張（論理ゲートによる完全同期）}
+\label{subsec:and_gate_future}
+本章の評価では，高速取得中に追加の高負荷割り込み処理（通信スタックや制御周期割り込み等）を介在させず，
+時間決定性を優先した構成としている．この前提下では，前節の画素オフセットはほぼ一定であり，
+有効画素ウィンドウ補正として安定に吸収できる．
+
+一方，将来的に割り込み負荷が増大し，ST遷移からADC/DMA開始までのレイテンシが変動する場合，
+画素シフトが非定常となり，定数補正のみでは不十分となる可能性がある．
+その場合には，ST信号と「ADC/DMAのARM完了（開始準備完了）」状態を論理回路（例：与ゲート）で合成し，
+「ST=LowかつARM完了」の条件成立後にのみTRG（もしくはADCトリガ経路）を有効化する
+ハードウェアゲーティングにより，フレーム開始位置を完全に決定論的に固定できる．
+本研究は現段階でこの拡張を要さないが，システム統合要件の変化に応じて導入可能である．
+
 
 \section{実装要点}
 \label{sec:implementation_points}
@@ -199,9 +214,14 @@ ST=LOW（読出期間）に遷移するとブレーキが解除され，TRGOが�
 \subsection{ハードウェアトリガ連鎖（Timer--ADC--DMA）}
 \label{subsec:hw_trigger_chain}
 ADCは外部トリガ入力により変換を開始し，変換結果をDMAでメモリへ連続転送する．
-タイマ側はTRG（外部入力）に同期してTRGOを生成し，TRGOをADCトリガに接続する．
-これにより，TRG周期ごとにCPUを介さず一定タイミングでサンプリングが実行される．
-加えて，BKINによりTRGOを遮断できるため，積分期間中の誤トリガを抑制する．
+本システムでは，TIM2のPWMによりC12880MAへCLKを供給し，
+TRGはTIM15でエッジ同期イベントとして取得した上で，ADC外部トリガへ接続する．
+このとき，ADCの変換開始はTRGエッジにより駆動されるため，
+CPUが周期ごとにADCを起動する必要がなく，\SI{5}{\mega\hertz}級の高頻度でもサンプリング位相の決定性を維持できる．
+
+また，DMAは各変換結果を逐次バッファへ転送し，フレーム終端はDMA転送完了で検知する．
+これにより，CPU介在はフレーム境界（開始・完了）に限定され，
+周期イベントごとのISR負荷が性能制約となる問題を本質的に回避できる．
 
 \subsection{STM32H7系列におけるキャッシュ・コヒーレンシ対策}
 \label{subsec:cache_coherency}
@@ -399,10 +419,13 @@ BME280およびS300L-3Vを併用した．これら環境センサの取得処理
 \section{まとめ}
 \label{sec:sensor_unit_summary}
 本章では，C12880MAを用いた高速分光センシングの実現に向け，
-割込み駆動方式の制約を再現的に示し，デュアルスイッチFSMアーキテクチャを提案した．
-提案手法はCLKオン・オフ制御とBKINによるトリガ経路ゲーティングにより，
-C12880MA固有の競合状態（フライングスタート）をハードウェアレベルで回避する．
-さらにSTM32H723ZGに実装し，\SI{5}{\mega\hertz}での安定取得を実測により検証した．
+割込み駆動方式の制約を再現的に示した上で，
+連続CLK下でのST制御とTRG同期ハードウェアトリガに基づくADC/DMAストリーミング取得系を構築した．
+さらに，ST立下り後のADC/DMA開始に伴う画素レベルの開始オフセットを実測により定量化し，
+有効画素ウィンドウ補正として取り込むことで，高速取得時のスペクトル整合性を確保した．
+STM32H723ZGに実装し，\SI{5}{\mega\hertz}での安定取得をオシロスコープおよびCSV再描画により検証した．
+また，将来的に割り込み負荷が増大して遅延が非定常化する場合には，
+論理ゲートによるハードウェアゲーティングへ拡張することでフレーム開始位置を決定論的に固定できることを示した．
 次章では，本センサユニットにより取得したデータを用いた環境マッピングおよび統合評価について述べる．
 
 \end{document}
