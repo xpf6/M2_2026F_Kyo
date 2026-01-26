@@ -85,7 +85,7 @@ AGVの写真や構成をFig.~\ref{fig:robot_platform}に示す．
   \label{fig:robot_platform}
 \end{figure}
 
-\subsection{ソフトウェアアーキテクチャ}
+\subsection{ソフトウェア構成}
 \label{subsec:software}
 本システムはROS~2(Robot Operating System 2)\cite{ref:ROS2} を基盤とし，自己位置推定・地図生成・自律走行をモジュール化して構成する．
 自己位置推定およびマッピングは，フロントエンドとしてLiDAR--IMUオドメトリを
@@ -140,7 +140,7 @@ RTAB-Mapを採用した理由は，（i）ループ閉合に基づく長期ド�
 これにより，制御・追従は\texttt{odom}系の連続性を保持しつつ，
 地図参照のナビゲーションおよび環境マッピングは\texttt{map}系でのグローバル整合を利用できる．
 
-\subsubsection{データフロー}
+\subsubsection{データ処理フロー}
 \label{subsubsec:dataflow}
 主なデータフローを以下に示す．
 \begin{itemize}
@@ -152,7 +152,7 @@ RTAB-Mapを採用した理由は，（i）ループ閉合に基づく長期ド�
 \end{itemize}
 
 \clearpage
-\section{農業環境における課題と故障モード}
+\section{農業用ハウス環境におけるGNSS観測異常の分類}
 \label{sec:problem_definition}
 農業用ハウス環境におけるRTK-GNSSは，多くの時間帯で高精度に利用可能である一方，
 遮蔽・マルチパス・差分補正の途絶等により，測位品質が間欠的に劣化する．
@@ -191,7 +191,7 @@ GNSS観測をオンラインで選別する GNSS 品質監視モジュールを�
 したがって本研究では，GNSS出力の重みを段階的に調整するのではなく，
 採用または遮断によってRTAB-Mapへの拘束注入を制御する．
 
-\subsection{入出力と二値ポリシー}
+\subsection{入出力仕様と遮断の実装}
 \label{subsec:supervisor_io}
 品質監視モジュールの入力は，GNSS観測\texttt{NavSatFix}，
 受信機の補助状態量（測位状態，衛星数，DOP，補正受信状況など），
@@ -210,9 +210,9 @@ NLOS／マルチパス環境下では，受信機が共分散を過小評価し�
 $\mathrm{diag}(C_{\mathrm{blk}},C_{\mathrm{blk}},C_{\mathrm{blk}})$とし，
 $C_{\mathrm{blk}}$は十分大きい定数（例：$99999$）として設定する．
 
-\subsection{可用性スクリーニング}
+\subsection{可用性判定}
 \label{subsec:availability_gate}
-可用性スクリーニングは，LIO等の外部推定に依存せず，
+可用性判定は，LIO等の外部推定に依存せず，
 受信機自身が提供する状態量に基づいて GNSS観測の基本的な入力妥当性を判定する．
 目的は，測位不成立や補正途絶などの利用不可能状態を確実に遮断し，
 バックエンドグラフへ不正な拘束が注入されることを防ぐことである．
@@ -235,7 +235,7 @@ Availability gateのみで妥当性を確認した上で暫定的に採用する
 これにより，正常区間であっても開始直後から連続して遮断となる挙動を抑制する．
 
 
-\subsection{完全性監視：短時間増分整合性に基づく遮断判定}
+\subsection{完全性監視：短時間増分整合性検定}
 \label{subsec:integrity_gate}
 完全性監視は，受信機状態が良好に見えるにもかかわらず，
 遮蔽・マルチパスに起因するNLOS環境下で外れ値を含む誤測位が混入する状況を抑制するための機構である．
@@ -263,7 +263,7 @@ $\Sigma_{\mathrm{gnss}}$の対角要素には下限値（covariance floor）を�
 $d(t)$に短い履歴の中央値フィルタを適用し，
 連続不合格が一定回数に達した場合にRejectを維持する（ヒステリシス）．
 
-\subsection{NLOS外れ値発生直後の1サンプル注入を防ぐ設計}
+\subsection{外れ値発生直後の注入防止}
 \label{subsec:first_frame_block}
 増分整合性検定は窓幅や履歴処理を伴うため，原理的に検知遅延が生じ得る．
 しかしNLOS由来の大偏差外れ値においては，
@@ -289,7 +289,7 @@ GNSS が極端に小さい共分散，すなわち過剰な信頼度を報告し
 本研究では，地図破綻リスクの低減を最優先とし，
 1 サンプル分のレイテンシ増加を許容した．
 
-\section{WGS84から局所ENUへの変換}
+\section{完全性監視のための座標変換}
 \label{sec:enu_conversion}
 完全性監視では，GNSSとLIOの短時間増分を同一の直交座標系で比較する必要があるため，
 GNSS測位（緯度・経度）を局所直交座標へ変換する．
@@ -335,7 +335,7 @@ GeographicLibは高精度かつ汎用的であり，広範囲移動や標高変�
 地図整合性を改善できることを検証する．
 なお，本環境ではRTK-GNSSが安定して利用可能な時間帯が多い一方で，
 遮蔽・マルチパスに起因する明確なNLOS外れ値は発生頻度が低く，再現性のある収集が困難であった．
-そこで本研究では，NLOS由来の測位逸脱が疑われる走行ログをケーススタディとして詳細に解析し，
+そこで本研究では，NLOS由来の測位逸脱が疑われるROS 2 bag に基づく走行記録（以下，ログ）をケーススタディとして詳細に解析し，
 品質監視の有効性を主として定性的に示す．
 
 \subsection{実験環境とデータ収集}
@@ -366,7 +366,7 @@ ROS~2 bagとして同期記録した．
   \label{fig:env_photos}
 \end{figure}
 
-\subsection{評価対象ログとNLOS起因の測位逸脱の観測}
+\subsection{評価対象データにおけるGNSS軌跡不連続の観測}
 \label{subsec:nlos_observation}
 記録したGNSS観測（\texttt{/fix}）をFoxglove上で可視化したところ，
 本来連続であるべき走行軌跡に対し，短時間の不連続（ジャンプ／断裂）に相当する挙動が確認された．

@@ -188,7 +188,7 @@ DMAを併用してCPU負荷を低減した場合でも\SI{130}{\kilo\hertz}程�
     \end{tabular}
 \end{table}
 
-\section{提案手法：連続CLK下でのST制御とTRG同期ハードウェア取得}
+\section{分光データのハードウェア同期取得アーキテクチャ}
 \label{sec:proposed_chain}
 本研究では，CLKを停止・再開することなく連続供給し，
 ST信号により積分区間を定義した上で，ST立下り後に読出を開始するC12880MAの基本動作に整合する形で取得系を構成した．
@@ -231,7 +231,7 @@ ST遷移からDMA開始までのソフトウェア起動遅延が，画素列上
 およそ85番目付近となる．本研究ではこの挙動を系統的な固定遅延として扱い，
 先頭85画素を無効画素として除外することで，有効スペクトルデータを安定に抽出した．
 
-\subsection{割り込み負荷を伴うシステムへの拡張（論理ゲートによる完全同期）}
+\subsection{論理ゲートによる完全同期への拡張}
 \label{subsec:and_gate_future}
 本章の評価では，高速取得中に追加の高負荷割り込み処理（通信スタックや制御周期割り込み等）を介在させず，
 時間決定性を優先した構成としている．この前提下では，前節の画素オフセットはほぼ一定であり，
@@ -245,7 +245,7 @@ ST遷移からDMA開始までのソフトウェア起動遅延が，画素列上
 本研究は現段階でこの拡張を要さないが，システム統合要件の変化に応じて導入可能である．
 
 
-\section{実装要点}
+\section{実装}
 \label{sec:implementation_points}
 本節では，提案アーキテクチャをMCU上で安定動作させるための実装要点を述べる．
 
@@ -261,9 +261,9 @@ CPUが周期ごとにADCを起動する必要がなく，\SI{5}{\mega\hertz}級�
 これにより，CPU介在はフレーム境界（開始・完了）に限定され，
 周期イベントごとのISR負荷が性能制約となる問題を本質的に回避できる．
 
-\subsection{STM32H7系列におけるキャッシュ・コヒーレンシ対策}
+\subsection{STM32H7におけるキャッシュ整合性対策}
 \label{subsec:cache_coherency}
-STM32H7系列ではデータキャッシュによりDMA転送データの可視性が損なわれる場合がある．
+STM32H7シリーズではデータキャッシュによりDMA転送データの可視性が損なわれる場合がある．
 本研究ではDMA転送先バッファをDTCM（Data Tightly Coupled Memory）領域へ配置し，
 キャッシュの影響を受けないメモリによりデータ整合性を確保した．
 併せて，必要に応じてキャッシュ無効化あるいはキャッシュクリーン／インバリデートを実施し，
@@ -293,7 +293,7 @@ STM32H7系列ではデータキャッシュによりDMA転送データの可視�
 ADCのハードウェアキャリブレーションおよびトリガ設定を最適化した．
 その結果，\SI{5}{\mega\hertz}での連続取得に成功した．
 
-\subsection{オシロスコープのスクリーンショットによる\protect\SI{5}{\mega\hertz}動作確認}
+\subsection{オシロスコープによる\protect\SI{5}{\mega\hertz}動作確認}
 \label{subsec:timing_scope_screenshot}
 
 Fig.~\ref{fig:scope_clk_trg_video_eos}に，\SI{5}{\mega\hertz}動作時のオシロスコープ画面を示す．
@@ -326,7 +326,7 @@ CH1をTRG信号，CH2をCLK信号，CH4をVIDEO信号，CH3をEOS信号とする
   \label{fig:scope_clk_trg_video_eos}
 \end{figure}
 
-\subsection{CSVファイルから再描画したEOS信号，ST信号およびVIDEO信号の波形}
+\subsection{CSVに基づくEOS／ST／VIDEO波形の再構成}
 \label{subsec:timing_csv_plots}
 オシロスコープから保存したCSVデータを用い，制御信号（EOS, ST）と出力信号（VIDEO）の関係を再描画した．
 
