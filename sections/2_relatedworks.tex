@@ -52,11 +52,29 @@ NLOS受信やマルチパスが発生し，見かけ上の受信機状態が良�
 したがって，GNSSを使う／使わないの二択ではなく，
 GNSS拘束を動的に選別し，安全に統合するための品質監視の枠組みが必要となる．
 
+
+
 \subsection{NLOS/マルチパスと完全性監視}
 GNSS外れ値の典型要因として，マルチパスおよびNLOS受信が挙げられる．
 マルチパスは直達波と反射波の干渉により誤差が正負に振れ得る一方，
 NLOSでは直達波が遮蔽され反射経路のみを受信するため，測距誤差が系統的バイアスとなりやすい．
 このため，受信機が出力する状態量のみでは外れ値を十分に判別できない場合がある．
+このような環境影響の一例として，先行研究\cite{ref:Kobayashi2021AGV}では，
+農業施設周辺において取得されたGNSS軌跡が局所的に乱れる様子が報告されている．
+Fig.~\ref{fig:kobayashi_multipath_example}は，農業環境における遮蔽・反射の影響を
+示す事例である．
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figures/2/kobayashi_map.pdf}
+  \caption{GNSS trajectory disturbances observed in agricultural environments.
+  The numbered segments represent different positioning situations; 
+  segments 2 and 3 are located near farmland and facilities,
+  where environmental effects can degrade GNSS measurements.
+  (reproduced from \cite{ref:Kobayashi2021AGV}).}
+  \label{fig:kobayashi_multipath_example}
+\end{figure}
+
 
 完全性監視は，測位情報が要求性能を満たさない場合に
 利用者へ適時に警告・排除判断を提供する枠組みであり，航空分野でRAIM等として体系化されてきた．
