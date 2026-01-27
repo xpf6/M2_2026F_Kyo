@@ -1,0 +1,201 @@
+%! TEX root = ../main.tex
+\documentclass[main]{subfiles}
+
+\begin{document}
+\chapter{使用したセンサ}
+\label{sec:appendix_sensors}
+\section{STM32 NUCLEO-H723ZG開発ボード}
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{figures/4/eval_setup_h723.pdf}
+  \caption{Experimental setup for high-speed spectral acquisition. An STM32 NUCLEO-H723ZG development board is connected to the sensor module with an optical bandpass filter via jumper wires for power and signal interfaces.\cite{ref:stm32h723zg}}
+  \label{fig:eval_setup_h723}
+\end{figure}
+
+
+
+\clearpage
+\section{BME280}
+
+\begin{figure}[h]
+  \centering
+  \begin{minipage}[h]{0.48\linewidth}
+    \centering
+    \vspace{1.2em}
+    \includegraphics[width=\linewidth]{figures/appendix/bme_280.jpg}
+    \caption{Environmental sensor (BME280) used in this study.\cite{ref:bme280}}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[h]{0.48\linewidth}
+    \centering
+    \captionof{table}{Environmental sensor (BME280) used in this study.\cite{ref:bme280}}
+    \label{tab:bme280_spec}
+    \vspace{0.5em}
+    \begin{tabular}{ll}
+      \hline
+      Item & Specification \\
+      \hline
+      Measured quantities & Temperature, humidity, pressure \\
+      Humidity range & 0–100 \%RH \\
+      Pressure range & 300–1100 hPa \\
+      Temperature range & −40 °C to +85 °C \\
+      Humidity accuracy & ±3 \%RH \\
+      Interface & I\textsuperscript{2}C, SPI \\
+      Supply voltage & 1.71–3.6 V \\
+      Current consumption & 1.8–3.6 µA (typ.) \\
+      Package size & 2.5 mm × 2.5 mm × 0.93 mm \\
+      \hline
+    \end{tabular}
+  \end{minipage}
+\end{figure}
+
+
+\clearpage
+\section{S300L-3V CO$_2$センサ}
+
+\begin{figure}[h]
+  \centering
+  \begin{minipage}[h]{0.48\linewidth}
+    \centering
+    \vspace{1.2em}
+    \includegraphics[width=\linewidth]{figures/appendix/CO2.jpg}
+    \caption{S300L-3V CO$_2$ sensor used in this study.\cite{ref:S300L}}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[h]{0.48\linewidth}
+    \centering
+    \captionof{table}{S300L-3V CO$_2$ sensor used in this study.\cite{ref:S300L}}
+    \label{tab:s300l}
+    \vspace{0.5em}
+    \begin{tabular}{ll}
+      \hline
+      Item & Specification \\
+      \hline
+      Measured gas & CO\textsubscript{2} \\
+      Measurement range & 0–10,000 ppm \\
+      Accuracy & ±3 \% of reading or ±30 ppm \\
+      Response time ($T_{63\%}$) & 60 s \\
+      Measurement interval & 3 s \\
+      Supply voltage & 3.2–3.55 V \\
+      Current consumption & 12 mA (normal), 0.3 mA (sleep) \\
+      Output interfaces & UART (TTL), I\textsuperscript{2}C, Analog \\
+      Operating temperature & −20 °C to +50 °C \\
+      Dimensions & 33 mm × 33 mm × 13.1 mm \\
+      Weight & Approx. 10 g \\
+      \hline
+    \end{tabular}
+  \end{minipage}
+\end{figure}
+
+
+\clearpage
+\section{u-blox ZED-F9P RTK-GNSS受信機}
+
+\begin{figure}[h]
+  \centering
+  \begin{minipage}[h]{0.48\linewidth}
+    \centering
+    \vspace{1.2em}
+    \includegraphics[width=\linewidth]{figures/appendix/zed_f9p.png}
+    \caption{RTK-GNSS receiver (u-blox ZED-F9P) used in this study.\cite{ref:zed_f9p}}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[h]{0.48\linewidth}
+    \centering
+    \captionof{table}{RTK-GNSS receiver (u-blox ZED-F9P) used in this study.\cite{ref:zed_f9p}}
+    \label{tab:ublox_zedf9p}
+    \vspace{0.5em}
+    \begin{tabular}{ll}
+      \hline
+      Item & Specification \\
+      \hline
+      GNSS bands & GPS, GLONASS, Galileo, BeiDou \\
+      RTK support & Yes (multi-band RTK) \\
+      Position accuracy & Centimeter-level (RTK FIX) \\
+      Maximum update rate & Up to 20 Hz \\
+      Communication interfaces & UART, I\textsuperscript{2}C, SPI, USB \\
+      Supply voltage & 2.7–3.6 V \\
+      Operating temperature & −40 °C to +85 °C \\
+      Package & LGA \\
+      Dimensions & 17.0 mm × 22.0 mm × 2.4 mm \\
+      \hline
+    \end{tabular}
+  \end{minipage}
+\end{figure}
+
+\clearpage
+\section{u-blox ANN-MB-00 RTK-GNSSアンテナ}
+\begin{figure}[h]
+  \centering
+  \begin{minipage}[h]{0.48\linewidth}
+    \centering
+    \vspace{1.2em}
+    \includegraphics[width=\linewidth]{figures/appendix/antenna.png}
+    \caption{RTK-GNSS antenna (u-blox ANN-MB-00) used in this study.\cite{ref:antenna}}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[h]{0.48\linewidth}
+    \centering
+    \captionof{table}{RTK-GNSS antenna (u-blox ANN-MB-00) used in this study.\cite{ref:antenna}}
+    \label{tab:ublox_antenna}
+    \vspace{0.5em}
+    \begin{tabular}{ll}
+      \hline
+      Item & Specification \\
+      \hline
+      Type & Active multi-band GNSS antenna (RHCP patch + LNA + SAW) \\
+      Supported GNSS & GPS / GLONASS / Galileo / BeiDou \\
+      Bands & L1 (1559--1606 MHz), L2/E5b/B2I (1197--1249 MHz) \\
+      Supply voltage & 3.0--5.0 V \\
+      Supply current & Typ. 15 mA \\
+      LNA gain & Typ. 28 $\pm$ 3 dB (both bands) \\
+      Cable / length & RG174, 5.0 m \\
+      Connector options & SMA / SMB / MCX \\
+      Mounting & Magnetic base, screw mount option (2 $\times$ M4) \\
+      Size & 82.0 $\times$ 60.0 $\times$ 22.5 mm \\
+      Weight & Typ. 173 g (incl. cable) \\
+      Ingress protection & IP67 \\
+      Operating temperature & $-40$ to $+85~^\circ$C \\
+      \hline
+    \end{tabular}
+  \end{minipage}
+\end{figure}
+
+
+\clearpage
+\section{Livox MID-360 3D-LiDAR}
+
+\begin{figure}[h]
+  \centering
+  \begin{minipage}[h]{0.48\linewidth}
+    \centering
+    \vspace{1.2em}
+    \includegraphics[width=\linewidth]{figures/appendix/livox.png}
+    \caption{LiDAR sensor (Livox MID-360) used in this study.\cite{ref:Livox_mid360}}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[h]{0.48\linewidth}
+    \centering
+    \captionof{table}{LiDAR sensor (Livox MID-360) used in this study.\cite{ref:Livox_mid360}}
+    \label{tab:livox_mid360}
+    \vspace{0.5em}
+    \begin{tabular}{ll}
+      \hline
+      Item & Specification \\
+      \hline
+      Measurement principle & 3D LiDAR (non-repetitive scanning) \\
+      Field of view & 360° (horizontal) × 59° (vertical) \\
+      Detection range & Up to 70 m (typ.) \\
+      Angular resolution & Non-uniform (non-repetitive pattern) \\
+      Output rate & Up to 200,000 points/s \\
+      Interface & Ethernet (UDP) \\
+      Supply voltage & 9–27 V DC \\
+      Dimensions & 103 mm × 103 mm × 39.5 mm \\
+      Weight & Approx. 265 g \\
+      \hline
+    \end{tabular}
+  \end{minipage}
+\end{figure}
+
+\FloatBarrier
+\end{document}
