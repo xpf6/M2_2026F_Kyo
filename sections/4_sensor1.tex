@@ -18,6 +18,37 @@ DMAにより画素列をストリーミング取得するアーキテクチャ�
 \SI{5}{\mega\hertz}級の安定取得を実現した．
 提案手法はSTM32F446REおよびSTM32H723ZGに実装し，
 最終的に\SI{5}{\mega\hertz}での連続取得を実証した．
+Fig.~\ref{fig:c12880ma}に，本研究で使用した小型分光センサ C12880MA を示す．
+Table~\ref{tab:c12880ma_spec}に，本研究におけるシステム設計上，
+特に重要となる主要仕様を示す．
+
+\begin{figure}[b]
+  \centering
+  \includegraphics[width=0.5\linewidth]{figures/4/c12880ma.png}
+  \caption{Miniature spectrometer C12880MA used in the proposed spectral sensing system}
+  \label{fig:c12880ma_photo}
+\end{figure}
+
+\begin{table}[t]
+  \centering
+  \caption{Key specifications of the C12880MA spectrometer relevant to this study}
+  \label{tab:c12880ma_spec}
+  \begin{tabular}{l c}
+    \hline
+    Item & Specification \\
+    \hline
+    Spectral range & 340--850 nm \\
+    Number of pixels & 288 \\
+    Pixel size & $14 \times 200~\mu$m \\
+    Slit size & $50 \times 500~\mu$m \\
+    Maximum clock frequency & 5 MHz \\
+    Output signal & Analog video \\
+    Supply voltage & 5 V \\
+    Dimensions & $20.1 \times 12.5 \times 10.1$ mm \\
+    Weight & 5 g \\
+    \hline
+  \end{tabular}
+\end{table}
 
 \section{本章で用いるセンサユニットの概要}
 \label{sec:sensor_unit_overview}
@@ -36,6 +67,9 @@ Fig.~\ref{fig:s300l_circuit}，Fig.~\ref{fig:bme280_circuit}）．
   \caption{Overall multisensor system architecture}
   \label{fig:agv_multisensor_overall}
 \end{figure}
+
+
+
 
 センサユニットの構成要素と主仕様をTable~\ref{tab:sensor_unit_specs}に示す．
 また，開発したセンサユニットの外観をFig.~\ref{fig:sensor_unit_photo}に示す．
@@ -212,11 +246,6 @@ Fig.~\ref{fig:c12880ma_timing}に示すように，C12880MAはCLKに同期して
 別タイマ（TIM15）でTRGエッジを取り込み，そのイベントをADCの外部トリガとして用いる．
 ADCは外部トリガ入力により変換を開始し，変換結果はDMAによりメモリへ逐次転送されるため，
 TRG周期に同期した一様なサンプリングがCPUの介在なしに実行される．
-
-重要なのは，ADC変換の開始条件が「ソフトウェア呼出」ではなく「TRGエッジ」により決まる点である．
-これにより，ISR内処理やタスクスケジューリングに起因する遅延・ばらつきが
-サンプリング位相へ直接反映されることを抑制し，
-\SI{5}{\mega\hertz}級の連続取得においてもタイミング決定性を維持できる．
 
 \subsection{ST立下り後の開始遅延と有効画素範囲の補正}
 \label{subsec:effective_pixel_window}
